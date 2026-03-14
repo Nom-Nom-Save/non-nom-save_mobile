@@ -1,13 +1,28 @@
 [versions]
-agp = "9.1.0"
-coreKtx = "1.10.1"
+agp = "8.13.0"
+kotlin = "2.2.21"
+coreKtx = "1.17.0"
 junit = "4.13.2"
-junitVersion = "1.1.5"
-espressoCore = "3.5.1"
-lifecycleRuntimeKtx = "2.6.1"
-activityCompose = "1.8.0"
-kotlin = "2.2.10"
-composeBom = "2024.09.00"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.9.4"
+activityCompose = "1.11.0"
+composeBom = "2025.10.01"
+hilt = "2.57.2"
+hiltCompiler = "2.57.2"
+hiltNavCompose = "1.3.0"
+navigationCompose = "2.9.5"
+devtoolsKsp = "2.2.21-2.0.4"
+runtimeCompose = "2.6.2"
+chucker = "4.2.0"
+room = "2.8.3"
+coil = "3.3.0"
+ktor = "3.3.1"
+dataStore = "1.1.7"
+credentials = "1.5.0"
+googleid = "1.1.1"
+googleSignin = "20.7.0"
+kizitonwoseCalendar = "2.9.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,8 +39,41 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+android-hilt = {group = "com.google.dagger", name = "hilt-android", version.ref = "hilt"}
+android-hilt-compiler = {group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hiltCompiler"}
+hilt-navigation-compose = {group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavCompose"}
+lifecycle-runtime-compose = {group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "runtimeCompose"}
+lifecycle-viewmodel-compose = {group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref="runtimeCompose"}
+navigation-compose = {group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose"}
+chucker = {group = "com.github.chuckerteam.chucker", name = "library", version.ref = "chucker"}
+chuckerNoOp = {group = "com.github.chuckerteam.chucker", name = "library-no-op", version.ref = "chucker"}
+roomCommon = {group = "androidx.room", name = "room-common", version.ref = "room"}
+roomRuntime = {group = "androidx.room", name = "room-runtime", version.ref = "room"}
+roomKtx = {group = "androidx.room", name = "room-ktx", version.ref = "room"}
+roomPaging = {group = "androidx.room", name = "room-paging", version.ref = "room"}
+roomCompiler = {group = "androidx.room", name = "room-compiler", version.ref = "room"}
+coil-compose = {group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil"}
+coil-network = {group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil"}
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+datastore-preferences = {group = "androidx.datastore", name = "datastore-preferences", version.ref = "dataStore"}
+credentials = {group = "androidx.credentials", name = "credentials", version.ref = "credentials"}
+credentials-play = {group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials"}
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+google-signin = {group = "com.google.android.gms", name = "play-services-auth", version.ref="googleSignin"}
+kizitonwose-calendar = { group = "com.kizitonwose.calendar", name = "compose", version.ref = "kizitonwoseCalendar"}
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "devtoolsKsp" }
+
 
