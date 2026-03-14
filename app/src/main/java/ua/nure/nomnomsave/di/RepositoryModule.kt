@@ -1,0 +1,57 @@
+package ua.nure.nomnomsave.di
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import io.ktor.client.HttpClient
+import kotlinx.coroutines.CloseableCoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import ua.nure.nomnomsave.db.DbRepository
+import ua.nure.nomnomsave.db.DbRepositoryImpl
+import ua.nure.nomnomsave.repository.auth.AuthRepository
+import ua.nure.nomnomsave.repository.auth.AuthRepositoryImpl
+import ua.nure.nomnomsave.repository.token.TokenRepository
+import ua.nure.nomnomsave.repository.token.TokenRepositoryImpl
+import javax.inject.Singleton
+
+
+@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryModule {
+    @Provides
+    @Singleton
+    fun provideDbRepository(
+        @ApplicationContext context: Context,
+        tokenRepository: TokenRepository
+    ): DbRepository = DbRepositoryImpl(
+        context = context,
+        tokenRepository = tokenRepository
+    )
+
+    @Provides
+    @Singleton
+    fun provideTokenRepository(
+        dataStore: DataStore<Preferences>
+    ): TokenRepository = TokenRepositoryImpl(
+        dataStore = dataStore
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Provides
+    fun provideAuthRepository(
+        httpClient: HttpClient,
+        @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
+        dbRepository: DbRepository,
+        tokenRepository: TokenRepository,
+    ): AuthRepository = AuthRepositoryImpl(
+        httpClient = httpClient,
+        dbDeliveryDispatcher = dbDeliveryDispatcher,
+        dbRepository = dbRepository,
+        tokenRepository = tokenRepository
+    )
+}
