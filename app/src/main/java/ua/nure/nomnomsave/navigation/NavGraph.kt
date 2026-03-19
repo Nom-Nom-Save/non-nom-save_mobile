@@ -3,6 +3,7 @@ package ua.nure.nomnomsave.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +14,7 @@ import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ua.nure.nomnomsave.ui.auth.register.RegistrationScreen
 
 @Composable
 fun NavGraph(
@@ -25,13 +27,20 @@ fun NavGraph(
         startDestination = Screen.Auth.SignIn
     ) {
         composable<Screen.Auth.Registration> {
-//            RegisterScreen(
-//                viewModel = hiltViewModel(),
-//                navController = navController
-//            )
+            RegistrationScreen(
+                viewModel = hiltViewModel(),
+                navController = navController
+            )
         }
         composable<Screen.Auth.SignIn> {
             Text("Sign in screen")
+            Button(
+                onClick = {
+                    navController.navigate(route = Screen.Auth.Registration)
+                }
+            ) {
+                Text("to registration")
+            }
 //            SignInScreen(
 //                viewModel = hiltViewModel(),
 //                navController = navController

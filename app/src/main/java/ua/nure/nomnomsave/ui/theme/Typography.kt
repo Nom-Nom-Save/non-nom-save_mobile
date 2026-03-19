@@ -3,16 +3,20 @@ package ua.nure.nomnomsave.ui.theme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.w3c.dom.Text
+import ua.nure.nomnomsave.R
 
 
 val regularTextStyle = TextStyle(
     fontSize = 16.sp,
     fontWeight = FontWeight(600),
-
+    fontFamily = FontFamily(
+        Font(R.font.crimson_text_regular)
+    )
     )
 
 val smallTextStyle = TextStyle(
@@ -21,7 +25,10 @@ val smallTextStyle = TextStyle(
 )
 val largeTextStyle = TextStyle(
     fontSize = 24.sp,
-    fontWeight = FontWeight(800)
+    fontWeight = FontWeight(800),
+    fontFamily = FontFamily(
+        Font(R.font.crimson_text_bold)
+    )
 )
 
 @Immutable

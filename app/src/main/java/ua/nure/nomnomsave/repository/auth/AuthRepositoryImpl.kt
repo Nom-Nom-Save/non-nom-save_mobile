@@ -12,6 +12,7 @@ import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.auth.dto.RegisterRequest
+import ua.nure.nomnomsave.repository.auth.dto.VerifyCodeRequest
 import ua.nure.nomnomsave.repository.dto.ResponseDto
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.safeCall
@@ -26,20 +27,34 @@ class AuthRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
     override suspend fun register(
         fullName: String,
         email: String,
-        password: String,
-        role: String
+        password: String
     ): Result<ResponseDto, DataError> = withContext(Dispatchers.IO) {
         safeCall<ResponseDto> {
-            httpClient.post("auth/register") {
+            httpClient.post("/auth/register-user") {
                 setBody(
                     body = RegisterRequest(
                         fullName = fullName,
                         email = email,
-                        password = password,
-                        role = role,
+                        password = password
                     )
                 )
             }
         }.onSuccess {  }
+    }
+
+    override suspend fun verifyEmail(
+        email: String,
+        code: String
+    ): Result<ResponseDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<ResponseDto> {
+            httpClient.post("auth/verify-email") {
+                setBody(
+                    VerifyCodeRequest(
+                        email = email,
+                        code = code
+                    )
+                )
+            }
+        }
     }
 }

@@ -3,8 +3,7 @@ package ua.nure.nomnomsave.repository.auth.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RegisterRequest(
-    val fullName: String,
+data class VerifyCodeRequest(
     val email: String,
-    val password: String
+    val code: String
 )

@@ -5,5 +5,6 @@ import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.dto.ResponseDto
 
 interface AuthRepository {
-    suspend fun register(fullName: String, email: String, password: String, role: String): Result<ResponseDto, DataError>
+    suspend fun register(name: String, email: String, password: String): Result<ResponseDto, DataError>
+    suspend fun verifyEmail(email: String, code: String): Result<ResponseDto, DataError>
 }

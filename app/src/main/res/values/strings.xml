@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">NomNomSave</string>
+    <string name="registrationTitle">Create account</string>
+    <string name="joinUs">Join us today</string>
+    <string name="registrationMessage">Enter your details to create your account and get started</string>
+    <string name="name">Full name</string>
+    <string name="email">Email address</string>
+    <string name="password">Password</string>
+    <string name="privacyPolicyAgreement">By signing up, you agree to your Terms of Service and Privacy Policy.</string>
+    <string name="signUp">Sign Up</string>
+    <string name="orContinueWith">or continue with</string>
+    <string name="google">Google</string>
+    <string name="haveAnAcc">Already have an account?</string>
+    <string name="login">Log in</string>
 </resources>
