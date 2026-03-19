@@ -28,6 +28,7 @@ import androidx.navigation.NavController
 import ua.nure.nomnomsave.App
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.navigation.Screen
+import ua.nure.nomnomsave.ui.compose.AccountVerificationDialog
 import ua.nure.nomnomsave.ui.compose.NNSButton
 import ua.nure.nomnomsave.ui.compose.NNSInputField
 import ua.nure.nomnomsave.ui.compose.NNSScreen
@@ -87,7 +88,8 @@ private fun RegistrationScreenContent(
                     .fillMaxWidth()
                     .padding(top = AppTheme.dimension.normal),
                 label = stringResource(R.string.name),
-                value = state.name
+                value = state.name,
+                errorText = state.nameError
             ) {
                 onAction(Register.Action.OnNameChange(name = it))
             }
@@ -96,7 +98,8 @@ private fun RegistrationScreenContent(
                     .fillMaxWidth()
                     .padding(top = AppTheme.dimension.normal),
                 label = stringResource(R.string.email),
-                value = state.email
+                value = state.email,
+                errorText = state.emailError
             ) {
                 onAction(Register.Action.OnEmailChange(email = it))
             }
@@ -106,7 +109,8 @@ private fun RegistrationScreenContent(
                     .padding(top = AppTheme.dimension.normal),
                 label = stringResource(R.string.password),
                 value = state.password,
-                isPassword = true
+                isPassword = true,
+                errorText = state.passwordError
             ) {
                 onAction(Register.Action.OnPasswordChange(password = it))
             }
@@ -207,6 +211,22 @@ private fun RegistrationScreenContent(
                 style = AppTheme.typography.regular.copy(
                     color = AppTheme.color.active
                 ),
+            )
+        }
+
+        if (state.showVerificationDialog) {
+            AccountVerificationDialog(
+                email = state.email,
+                onVerify = { code ->
+                    onAction(
+                        Register.Action.OnVerificationEmailCode(code = code)
+                    )
+                },
+                onDismiss = {
+                    onAction(
+                        Register.Action.OnShowVerificationDialog(false)
+                    )
+                }
             )
         }
     }

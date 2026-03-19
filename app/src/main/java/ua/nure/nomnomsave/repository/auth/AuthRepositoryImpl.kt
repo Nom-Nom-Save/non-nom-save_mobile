@@ -30,7 +30,7 @@ class AuthRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
         password: String
     ): Result<ResponseDto, DataError> = withContext(Dispatchers.IO) {
         safeCall<ResponseDto> {
-            httpClient.post("/auth/register-user") {
+            httpClient.post("auth/register-user") {
                 setBody(
                     body = RegisterRequest(
                         fullName = fullName,

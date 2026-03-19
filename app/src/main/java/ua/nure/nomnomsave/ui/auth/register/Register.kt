@@ -21,6 +21,7 @@ public object Register {
         data class OnPasswordChange(val password: String) : Action
 
         data class OnPrivacyPolicyAgreementChange(val isAgreed: Boolean) : Action
+        data class OnShowVerificationDialog(val state: Boolean): Action
     }
 
     data class State(
@@ -31,5 +32,8 @@ public object Register {
         val isPrivacyPolicyAgreed: Boolean = false,
         val showVerificationDialog: Boolean = false,
         val code: String = "",
+        val nameError: String? = null,
+        val emailError: String? = null,
+        val passwordError: String? = null,
     )
 }
