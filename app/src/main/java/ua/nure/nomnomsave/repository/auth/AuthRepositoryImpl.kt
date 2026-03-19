@@ -12,6 +12,8 @@ import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.auth.dto.RegisterRequest
+import ua.nure.nomnomsave.repository.auth.dto.LoginRequest
+import ua.nure.nomnomsave.repository.auth.dto.LoginDto
 import ua.nure.nomnomsave.repository.auth.dto.VerifyCodeRequest
 import ua.nure.nomnomsave.repository.dto.ResponseDto
 import ua.nure.nomnomsave.repository.onSuccess
@@ -57,4 +59,25 @@ class AuthRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
             }
         }
     }
+
+    override suspend fun login(
+        email: String,
+        password: String
+    ): Result<LoginDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<LoginDto> {
+            httpClient.post("auth/login") {
+                setBody(
+                    LoginRequest(
+                        email = email,
+                        password = password,
+                        loginType = "user"
+                    )
+                )
+            }
+        }.onSuccess {
+            tokenRepository.setToken(newToken = it.accessToken)
+            tokenRepository.setUserName(newUserName = email)
+        }
+    }
+
 }

@@ -14,6 +14,7 @@ import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ua.nure.nomnomsave.ui.auth.login.LoginScreen
 import ua.nure.nomnomsave.ui.auth.register.RegistrationScreen
 
 @Composable
@@ -33,18 +34,10 @@ fun NavGraph(
             )
         }
         composable<Screen.Auth.SignIn> {
-            Text("Sign in screen")
-            Button(
-                onClick = {
-                    navController.navigate(route = Screen.Auth.Registration)
-                }
-            ) {
-                Text("to registration")
-            }
-//            SignInScreen(
-//                viewModel = hiltViewModel(),
-//                navController = navController
-//            )
+            LoginScreen(
+                viewModel = hiltViewModel(),
+                navController = navController
+            )
         }
         composable<Screen.Auth.ForgotPassword> {
 //            ForgotPasswordScreen(

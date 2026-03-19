@@ -20,4 +20,9 @@
     <string name="nameIsEmpty">Name field must not be empty</string>
     <string name="emailNotValid">Email not valid</string>
     <string name="passwordNotValid">Password not valid</string>
+    <string name="welcomeBack">Welcome back</string>
+    <string name="loginSubtitle">Please enter your details to sign in and continue</string>
+    <string name="dontHaveAnAcc">"Don't have an account?"</string>
+    <string name="noMatches">"No matches for users, please check your email or password."</string>
+    <string name="loginTitle">Login</string>
 </resources>
