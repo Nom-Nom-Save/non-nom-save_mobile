@@ -42,7 +42,7 @@ fun NNSNavigationBarItem(
         Icon(
             painter = painterResource(if(isSelected) item.selectedIcon else item.unselectedIcon),
             contentDescription = null,
-            tint = if (isSelected) AppTheme.color.active else AppTheme.color.grey
+            tint = if (isSelected) AppTheme.color.accent else AppTheme.color.grey
         )
         Text(
             modifier = Modifier.padding(top = 4.dp)
@@ -51,7 +51,7 @@ fun NNSNavigationBarItem(
             text = stringResource(item.title),
             style = AppTheme.typography.small.copy(
                 fontSize = 12.sp,
-                color = if(isSelected) AppTheme.color.active else AppTheme.color.grey
+                color = if(isSelected) AppTheme.color.accent else AppTheme.color.grey
             )
         )
     }
@@ -59,7 +59,7 @@ fun NNSNavigationBarItem(
 
 @Preview(showBackground = true)
 @Composable
-private fun BonteNavigationBarItemActivePreview(modifier: Modifier = Modifier) {
+private fun NNSNavigationBarItemActivePreview(modifier: Modifier = Modifier) {
     AppTheme {
         Box(modifier = Modifier.background(color = AppTheme.color.background)) {
             NNSNavigationBarItem(
@@ -72,7 +72,7 @@ private fun BonteNavigationBarItemActivePreview(modifier: Modifier = Modifier) {
 }
 @Preview(showBackground = true)
 @Composable
-private fun BonteNavigationBarItemPassivePreview(modifier: Modifier = Modifier) {
+private fun NNSNavigationBarItemPassivePreview(modifier: Modifier = Modifier) {
     AppTheme {
         Box(modifier = Modifier.background(color = AppTheme.color.background)) {
             NNSNavigationBarItem(
@@ -85,7 +85,7 @@ private fun BonteNavigationBarItemPassivePreview(modifier: Modifier = Modifier) 
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun BonteNavigationBarItemDarkActivePreview(modifier: Modifier = Modifier) {
+private fun NNSNavigationBarItemDarkActivePreview(modifier: Modifier = Modifier) {
     AppTheme {
         Box(modifier = Modifier.background(color = AppTheme.color.background)) {
             NNSNavigationBarItem(
@@ -99,7 +99,7 @@ private fun BonteNavigationBarItemDarkActivePreview(modifier: Modifier = Modifie
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun BonteNavigationBarItemDarkPassivePreview(modifier: Modifier = Modifier) {
+private fun NNSNavigationBarItemDarkPassivePreview(modifier: Modifier = Modifier) {
     AppTheme {
         Box(modifier = Modifier.background(color = AppTheme.color.background)) {
             NNSNavigationBarItem(
