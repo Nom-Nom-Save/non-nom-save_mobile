@@ -15,6 +15,8 @@ import ua.nure.nomnomsave.db.DbRepository
 import ua.nure.nomnomsave.db.DbRepositoryImpl
 import ua.nure.nomnomsave.repository.auth.AuthRepository
 import ua.nure.nomnomsave.repository.auth.AuthRepositoryImpl
+import ua.nure.nomnomsave.repository.resource.ResourceRepository
+import ua.nure.nomnomsave.repository.resource.ResourceRepositoryImpl
 import ua.nure.nomnomsave.repository.token.TokenRepository
 import ua.nure.nomnomsave.repository.token.TokenRepositoryImpl
 import javax.inject.Singleton
@@ -54,4 +56,9 @@ object RepositoryModule {
         dbRepository = dbRepository,
         tokenRepository = tokenRepository
     )
+
+    @Provides
+    fun provideResourceRepository(
+        @ApplicationContext context: Context,
+    ): ResourceRepository = ResourceRepositoryImpl(context = context)
 }

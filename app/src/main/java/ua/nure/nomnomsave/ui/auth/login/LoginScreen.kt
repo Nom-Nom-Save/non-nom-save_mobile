@@ -1,8 +1,10 @@
-package ua.nure.nomnomsave.ui.auth.register
+package ua.nure.nomnomsave.ui.auth.login
 
 import android.content.res.Configuration
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
@@ -19,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,7 +32,6 @@ import androidx.navigation.NavController
 import ua.nure.nomnomsave.App
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.navigation.Screen
-import ua.nure.nomnomsave.ui.compose.AccountVerificationDialog
 import ua.nure.nomnomsave.ui.compose.NNSButton
 import ua.nure.nomnomsave.ui.compose.NNSInputField
 import ua.nure.nomnomsave.ui.compose.NNSScreen
@@ -36,8 +39,8 @@ import ua.nure.nomnomsave.ui.compose.NNSTitle
 import ua.nure.nomnomsave.ui.theme.AppTheme
 
 @Composable
-fun RegistrationScreen(
-    viewModel: RegisterViewModel,
+fun LoginScreen(
+    viewModel: LoginViewModel,
     navController: NavController,
 ) {
 
@@ -46,38 +49,44 @@ fun RegistrationScreen(
     LaunchedEffect(key1 = Unit) {
         viewModel.event.collect {
             when (it) {
-                Register.Event.OnBack -> navController.navigateUp()
-                is Register.Event.OnNavigate -> navController.navigate(route = it.route)
+                Login.Event.OnBack -> navController.navigateUp()
+                is Login.Event.OnNavigate -> navController.navigate(route = it.route)
             }
         }
     }
-    RegistrationScreenContent(
+    LoginScreenContent(
         state = state,
         onAction = viewModel::onAction
     )
 }
 
 @Composable
-private fun RegistrationScreenContent(
-    state: Register.State,
-    onAction: (Register.Action) -> Unit
+private fun LoginScreenContent(
+    state: Login.State,
+    onAction: (Login.Action) -> Unit
 ) {
     NNSScreen(
         modifier = Modifier.padding(horizontal = AppTheme.dimension.normal),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        NNSTitle(title = stringResource(R.string.registrationTitle))
+        NNSTitle(title = stringResource(R.string.loginTitle))
+
+        Image(
+            modifier = Modifier.size(150.dp),
+            painter = painterResource(if (isSystemInDarkTheme()) R.drawable.logo_dark else R.drawable.logo_light),
+            contentDescription = null
+        )
 
         Text(
             modifier = Modifier
                 .fillMaxWidth(),
-            text = stringResource(R.string.joinUs),
+            text = stringResource(R.string.welcomeBack),
             style = AppTheme.typography.large
         )
         Text(
             modifier = Modifier
                 .fillMaxWidth(),
-            text = stringResource(R.string.registrationMessage),
+            text = stringResource(R.string.loginSubtitle),
             style = AppTheme.typography.small.copy(
                 color = AppTheme.color.grey
             )
@@ -87,21 +96,11 @@ private fun RegistrationScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = AppTheme.dimension.normal),
-                label = stringResource(R.string.name),
-                value = state.name,
-                errorText = state.nameError
-            ) {
-                onAction(Register.Action.OnNameChange(name = it))
-            }
-            NNSInputField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = AppTheme.dimension.normal),
                 label = stringResource(R.string.email),
                 value = state.email,
-                errorText = state.emailError
+                errorText = if (state.loginError != null) "" else null
             ) {
-                onAction(Register.Action.OnEmailChange(email = it))
+                onAction(Login.Action.OnEmailChange(email = it))
             }
             NNSInputField(
                 modifier = Modifier
@@ -110,47 +109,20 @@ private fun RegistrationScreenContent(
                 label = stringResource(R.string.password),
                 value = state.password,
                 isPassword = true,
-                errorText = state.passwordError
+                errorText = state.loginError,
             ) {
-                onAction(Register.Action.OnPasswordChange(password = it))
+                onAction(Login.Action.OnPasswordChange(password = it))
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = AppTheme.dimension.small)
-                    .clickable{onAction(Register.Action.OnPrivacyPolicyAgreementChange(isAgreed = !state.isPrivacyPolicyAgreed))},
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = state.isPrivacyPolicyAgreed,
-                    onCheckedChange = { isChecked ->
-                        onAction(Register.Action.OnPrivacyPolicyAgreementChange(isAgreed = isChecked))
-                    },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = AppTheme.color.active,
-                        uncheckedColor = AppTheme.color.active
-                    ),
-                    modifier = Modifier.padding(end = AppTheme.dimension.extraSmall)
-                )
-                Text(
-                    text = stringResource(R.string.privacyPolicyAgreement),
-                    style = AppTheme.typography.small.copy(
-                        textAlign = TextAlign.Start,
-                        color = AppTheme.color.grey
-                    )
-                )
-            }
         }
 
         NNSButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = AppTheme.dimension.normal),
-            text = stringResource(R.string.signUp),
-            enabled = state.isPrivacyPolicyAgreed
+            text = stringResource(R.string.login),
         ) {
-            onAction(Register.Action.OnRegister)
+            onAction(Login.Action.OnLogIn)
         }
 
         Row(
@@ -187,7 +159,7 @@ private fun RegistrationScreenContent(
             icon = R.drawable.google,
             color = Color.White
         ) {
-            onAction(Register.Action.OnGoogle)
+            //onAction(Login.Action.OnGoogleLogIn())
         }
 
         Row(
@@ -195,38 +167,22 @@ private fun RegistrationScreenContent(
                 .fillMaxWidth()
                 .padding(end = AppTheme.dimension.small, bottom = AppTheme.dimension.large)
                 .clickable {
-                    onAction(Register.Action.OnNavigate(Screen.Auth.SignIn))
+                    onAction(Login.Action.OnNavigate(Screen.Auth.Registration))
                 },
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
                 modifier = Modifier.padding(end = AppTheme.dimension.small),
-                text = stringResource(R.string.haveAnAcc),
+                text = stringResource(R.string.dontHaveAnAcc),
                 style = AppTheme.typography.regular.copy(
                     color = AppTheme.color.grey
                 )
             )
             Text(
-                text = stringResource(R.string.login),
+                text = stringResource(R.string.registrationTitle),
                 style = AppTheme.typography.regular.copy(
                     color = AppTheme.color.active
                 ),
-            )
-        }
-
-        if (state.showVerificationDialog) {
-            AccountVerificationDialog(
-                email = state.email,
-                onVerify = { code ->
-                    onAction(
-                        Register.Action.OnVerificationEmailCode(code = code)
-                    )
-                },
-                onDismiss = {
-                    onAction(
-                        Register.Action.OnShowVerificationDialog(false)
-                    )
-                }
             )
         }
     }
@@ -234,14 +190,13 @@ private fun RegistrationScreenContent(
 
 @Preview
 @Composable
-private fun RegistrationScreenContentPreview(modifier: Modifier = Modifier) {
+private fun LoginScreenContentPreview(modifier: Modifier = Modifier) {
     AppTheme {
         Box(
             modifier = modifier.background(color = AppTheme.color.background)
         ) {
-            RegistrationScreenContent(
-                state = Register.State(
-                    isPrivacyPolicyAgreed = true
+            LoginScreenContent(
+                state = Login.State(
                 )
             ) { }
         }
@@ -250,14 +205,13 @@ private fun RegistrationScreenContentPreview(modifier: Modifier = Modifier) {
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun RegistrationScreenContentDarkPreview(modifier: Modifier = Modifier) {
+private fun LoginScreenContentDarkPreview(modifier: Modifier = Modifier) {
     AppTheme {
         Box(
             modifier = modifier.background(color = AppTheme.color.background)
         ) {
-            RegistrationScreenContent(
-                state = Register.State(
-                    isPrivacyPolicyAgreed = true
+            LoginScreenContent(
+                state = Login.State(
                 )
             ) { }
         }
