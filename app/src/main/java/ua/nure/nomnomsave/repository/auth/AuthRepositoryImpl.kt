@@ -11,7 +11,9 @@ import ua.nure.nomnomsave.db.DbRepository
 import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
+import ua.nure.nomnomsave.repository.auth.dto.ForgotPasswordRequest
 import ua.nure.nomnomsave.repository.auth.dto.RegisterRequest
+import ua.nure.nomnomsave.repository.auth.dto.ResetPasswordRequest
 import ua.nure.nomnomsave.repository.auth.dto.LoginRequest
 import ua.nure.nomnomsave.repository.auth.dto.LoginDto
 import ua.nure.nomnomsave.repository.auth.dto.VerifyCodeRequest
@@ -60,6 +62,40 @@ class AuthRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
         }
     }
 
+    override suspend fun forgotPassword(email: String): Result<ResponseDto, DataError> = 
+        withContext(Dispatchers.IO) {
+            safeCall<ResponseDto> {
+                httpClient.post("auth/forgot-password") {
+                    setBody(
+                        ForgotPasswordRequest(
+                            email = email
+                        )
+                    )
+                }
+            }
+        }
+
+    override suspend fun verifyResetCode(
+        email: String,
+        code: String
+    ): Result<ResponseDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<ResponseDto> {
+            httpClient.post("auth/verify-code") {
+                setBody(VerifyCodeRequest(email = email, code = code))
+            }
+        }
+    }
+
+    override suspend fun resetPassword(
+        email: String,
+        newPassword: String
+    ): Result<ResponseDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<ResponseDto> {
+            httpClient.post("auth/reset-password") {
+                setBody(ResetPasswordRequest(email = email, newPassword = newPassword))
+            }
+        }
+    }
     override suspend fun login(
         email: String,
         password: String
