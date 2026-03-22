@@ -47,10 +47,7 @@ fun NavGraph(
 //            )
         }
         composable<Screen.Auth.ForgotPassword> {
-//            ForgotPasswordScreen(
-//                viewModel = hiltViewModel(),
-//                navController = navController
-//            )
+            Text("Forgot password screen - not yet implemented")
         }
 
     }
