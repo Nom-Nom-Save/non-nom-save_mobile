@@ -26,4 +26,5 @@
     <string name="noMatches">"No matches for users, please check your email or password."</string>
     <string name="loginTitle">Login</string>
     <string name="profile">Profile</string>
+    <string name="forgotPassword">Forgot password?</string>
 </resources>
