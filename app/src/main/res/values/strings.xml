@@ -26,5 +26,23 @@
     <string name="noMatches">"No matches for users, please check your email or password."</string>
     <string name="loginTitle">Login</string>
     <string name="profile">Profile</string>
+    <string name="enterVerificationCode">Enter verification code</string>
+    <string name="verifyCodeSubtitle">Check your email at %1$s for the 4-digit code</string>
+    <string name="verificationCode">Verification code</string>
+    <string name="verify">Verify</string>
+    <string name="didntReceiveCode">Didn\'t receive the code?</string>
+    <string name="resend">Resend</string>
+    <string name="resetYourPassword">Reset your password</string>
+    <string name="resetPasswordSubtitle">Enter your new password</string>
+    <string name="newPassword">New password</string>
+    <string name="confirmNewPassword">Confirm new password</string>
+    <string name="updatePassword">Update password</string>
+    <string name="resettingPassword">Resetting Password</string>
+    <string name="enterYourEmail">Enter your email</string>
+    <string name="forgotPasswordSubtitle">We\'ll send you a code to reset your password</string>
+    <string name="emailAddress">Email address</string>
+    <string name="submit">Submit</string>
+    <string name="invalidEmail">Invalid email format</string>
+    <string name="invalidCode">Invalid code format</string>
     <string name="forgotPassword">Forgot password?</string>
 </resources>
