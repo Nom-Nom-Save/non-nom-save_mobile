@@ -113,7 +113,20 @@ private fun LoginScreenContent(
             ) {
                 onAction(Login.Action.OnPasswordChange(password = it))
             }
-
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.normal)
+                    .clickable {
+                        onAction(Login.Action.OnNavigate(route = Screen.Auth.ForgotPassword))
+                    },
+                text = stringResource(R.string.forgotPassword),
+                style = AppTheme.typography.regular.copy(
+                    color = AppTheme.color.active,
+                    textAlign = TextAlign.End
+                ),
+            )
         }
 
         NNSButton(
