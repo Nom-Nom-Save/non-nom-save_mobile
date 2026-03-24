@@ -14,6 +14,7 @@ import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ua.nure.nomnomsave.ui.auth.forgotpassword.ForgotPasswordScreen
 import ua.nure.nomnomsave.ui.auth.login.LoginScreen
 import ua.nure.nomnomsave.ui.auth.register.RegistrationScreen
 
@@ -40,7 +41,10 @@ fun NavGraph(
             )
         }
         composable<Screen.Auth.ForgotPassword> {
-            Text("Forgot password screen - not yet implemented")
+            ForgotPasswordScreen(
+                viewModel = hiltViewModel(),
+                navController = navController
+            )
         }
 
     }
