@@ -15,6 +15,8 @@ import ua.nure.nomnomsave.db.DbRepository
 import ua.nure.nomnomsave.db.DbRepositoryImpl
 import ua.nure.nomnomsave.repository.auth.AuthRepository
 import ua.nure.nomnomsave.repository.auth.AuthRepositoryImpl
+import ua.nure.nomnomsave.repository.profile.ProfileRepository
+import ua.nure.nomnomsave.repository.profile.ProfileRepositoryImpl
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepositoryImpl
 import ua.nure.nomnomsave.repository.token.TokenRepository
@@ -61,4 +63,17 @@ object RepositoryModule {
     fun provideResourceRepository(
         @ApplicationContext context: Context,
     ): ResourceRepository = ResourceRepositoryImpl(context = context)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Singleton
+    @Provides
+    fun provideProfileRepository(
+        httpClient: HttpClient,
+        @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
+        dbRepository: DbRepository,
+    ): ProfileRepository = ProfileRepositoryImpl(
+        httpClient = httpClient,
+        dbDeliveryDispatcher = dbDeliveryDispatcher,
+        dbRepository = dbRepository
+    )
 }

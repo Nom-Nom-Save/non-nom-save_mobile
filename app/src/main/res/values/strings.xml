@@ -26,6 +26,16 @@
     <string name="noMatches">"No matches for users, please check your email or password."</string>
     <string name="loginTitle">Login</string>
     <string name="profile">Profile</string>
+    <string name="editProfile">Edit Profile</string>
+    <string name="personalInformation">Personal information</string>
+    <string name="notification">Notifications</string>
+    <string name="nearbyDeals">Nearby deals</string>
+    <string name="nearbyDealsDetails">Get notified about exclusive offers in your current area.</string>
+    <string name="closeTime">Close time</string>
+    <string name="closeTimeDetails">Get notified when your favorite cafe closes.</string>
+    <string name="saveChanges">Save changes</string>
+    <string name="newAvatar">New avatar URL</string>
+    <string name="changeProfilePhoto">Change profile photo</string>
     <string name="enterVerificationCode">Enter verification code</string>
     <string name="verifyCodeSubtitle">Check your email at %1$s for the 4-digit code</string>
     <string name="verificationCode">Verification code</string>
