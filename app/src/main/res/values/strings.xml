@@ -55,4 +55,9 @@
     <string name="invalidEmail">Invalid email format</string>
     <string name="invalidCode">Invalid code format</string>
     <string name="forgotPassword">Forgot password?</string>
+    <string name="weight">weight</string>
+    <string name="grams">%s g</string>
+    <string name="collectTil">Collect till %s</string>
+    <string name="allergens">Allergens</string>
+    <string name="showQR">Show QR</string>
 </resources>

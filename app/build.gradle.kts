@@ -151,6 +151,8 @@ dependencies {
 
     implementation(libs.kizitonwose.calendar)
 
+    implementation(libs.zxing)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

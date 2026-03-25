@@ -1,5 +1,6 @@
 package ua.nure.nomnomsave.ui.auth.register
 
+import android.graphics.Bitmap
 import ua.nure.nomnomsave.BuildConfig
 import ua.nure.nomnomsave.navigation.Screen
 

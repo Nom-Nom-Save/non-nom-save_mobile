@@ -25,12 +25,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import ua.nure.nomnomsave.App
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.navigation.Screen
 import ua.nure.nomnomsave.ui.compose.AccountVerificationDialog
 import ua.nure.nomnomsave.ui.compose.NNSButton
 import ua.nure.nomnomsave.ui.compose.NNSInputField
+import ua.nure.nomnomsave.ui.compose.NNSQRDialog
 import ua.nure.nomnomsave.ui.compose.NNSScreen
 import ua.nure.nomnomsave.ui.compose.NNSTitle
 import ua.nure.nomnomsave.ui.theme.AppTheme

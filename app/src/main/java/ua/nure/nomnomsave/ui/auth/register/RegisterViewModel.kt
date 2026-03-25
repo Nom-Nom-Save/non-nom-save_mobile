@@ -20,13 +20,13 @@ import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
 import ua.nure.nomnomsave.ui.auth.register.Register.Event.*
 import javax.inject.Inject
-import kotlin.onSuccess
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val resourceRepository: ResourceRepository,
 ) : ViewModel() {
+
     private val TAG by lazy { RegisterViewModel::class.simpleName }
     private val _state = MutableStateFlow(Register.State())
     val state = _state.asStateFlow()
