@@ -8,14 +8,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.profile.ProfileRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
-import ua.nure.nomnomsave.repository.token.TokenRepository
 import ua.nure.nomnomsave.ui.profile.Profile.Event.*
 import javax.inject.Inject
 
@@ -33,8 +31,8 @@ class ProfileViewModel @Inject constructor(
     private var saveChangesJob: Job? = null
 
     fun onAction(action: Profile.Action) = viewModelScope.launch {
-        when(action) {
-            Profile.Action.OnBack -> _event.emit(Profile.Event.OnBack)
+        when (action) {
+            Profile.Action.OnBack -> _event.emit(OnBack)
             is Profile.Action.OnNavigate -> _event.emit(OnNavigate(route = action.route))
 
             is Profile.Action.OnAvatarChange -> _state.update { s ->
@@ -45,6 +43,7 @@ class ProfileViewModel @Inject constructor(
                     showChangeAvatarDialog = false
                 )
             }
+
             Profile.Action.OnDismissChangeAvatarDialog -> {
                 _state.update { s ->
                     s.copy(
@@ -52,6 +51,7 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
             }
+
             Profile.Action.OnShowChangeAvatarDialog -> {
                 _state.update { s ->
                     s.copy(
@@ -67,6 +67,7 @@ class ProfileViewModel @Inject constructor(
                     )
                 )
             }
+
             is Profile.Action.OnNameChange -> _state.update { s ->
                 s.copy(
                     profile = state.value.profile?.copy(
@@ -75,12 +76,13 @@ class ProfileViewModel @Inject constructor(
                 )
             }
 
-            Profile.Action.OnCloseTimeChange -> _state.update { s->
+            Profile.Action.OnCloseTimeChange -> _state.update { s ->
                 s.copy(
                     closedTimeNotifications = !state.value.closedTimeNotifications
                 )
             }
-            Profile.Action.OnNearbyDealsChange -> _state.update { s->
+
+            Profile.Action.OnNearbyDealsChange -> _state.update { s ->
                 s.copy(
                     nearbyDealsNotifications = !state.value.nearbyDealsNotifications
                 )
@@ -89,6 +91,8 @@ class ProfileViewModel @Inject constructor(
             Profile.Action.OnSave -> saveChanges(
                 name = state.value.profile?.fullName,
                 email = state.value.profile?.email,
+                notifyNearby = state.value.profile?.notifyNearby,
+                notifyClosingSoon = state.value.profile?.notifyClosingSoon
             )
         }
     }
@@ -96,9 +100,11 @@ class ProfileViewModel @Inject constructor(
     private fun saveChanges(
         name: String?,
         email: String?,
+        notifyNearby: Boolean?,
+        notifyClosingSoon: Boolean?,
     ) {
         if (name?.isEmpty() == true) {
-            _state.update { s->
+            _state.update { s ->
                 s.copy(nameError = resourceRepository.getStringByResource(R.string.nameIsEmpty))
             }
             return
@@ -115,7 +121,9 @@ class ProfileViewModel @Inject constructor(
         saveChangesJob = viewModelScope.launch {
             profileRepository.patchMe(
                 fullName = name,
-                email = email
+                email = email,
+                notifyNearby = notifyNearby,
+                notifyClosingSoon = notifyClosingSoon
             ).onSuccess {}
         }
 

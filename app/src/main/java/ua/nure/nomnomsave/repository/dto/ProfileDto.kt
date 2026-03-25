@@ -9,5 +9,8 @@ data class ProfileDto(
     val email: String,
     val avatarUrl: String? = null,
     val isEmailVerified: Boolean,
+    val notifyNearby: Boolean = false,
+    val notifyClosingSoon: Boolean = false,
+    val notifyNewItems: Boolean = false,
     val createdAt: String,
 )

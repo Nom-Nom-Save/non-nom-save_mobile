@@ -16,4 +16,7 @@ sealed class Screen {
         @Serializable
         data object ForgotPassword : Auth()
     }
+
+    @Serializable
+    data object Profile : Screen()
 }

@@ -9,6 +9,9 @@ fun ProfileDto.toEntity() =
         email = email,
         fullName = fullName,
         avatarUrl = avatarUrl,
+        notifyNearby = notifyNearby,
+        notifyClosingSoon = notifyClosingSoon,
+        notifyNewItems = notifyNewItems,
         isEmailVerified = isEmailVerified,
         createdAt = createdAt,
     )

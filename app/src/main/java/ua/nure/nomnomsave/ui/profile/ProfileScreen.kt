@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.ui.compose.ChangeAvatarDialog
@@ -209,6 +208,7 @@ fun ProfileScreenContent(
                         NNSSwitch(
                             checked = state.nearbyDealsNotifications,
                             onCheckChange = {
+                                onAction(Profile.Action.OnNearbyDealsChange)
                             }
                         )
                     }
@@ -233,6 +233,7 @@ fun ProfileScreenContent(
                         NNSSwitch(
                             checked = state.closedTimeNotifications,
                             onCheckChange = {
+                                onAction(Profile.Action.OnCloseTimeChange)
                             }
                         )
                     }

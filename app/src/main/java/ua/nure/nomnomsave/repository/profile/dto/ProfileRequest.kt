@@ -7,4 +7,6 @@ data class ProfileRequest(
     val fullName: String? = null,
     val email: String? = null,
     val avatarUrl: String? = null,
+    val notifyNearby: Boolean? = null,
+    val notifyClosingSoon: Boolean? = null
 )

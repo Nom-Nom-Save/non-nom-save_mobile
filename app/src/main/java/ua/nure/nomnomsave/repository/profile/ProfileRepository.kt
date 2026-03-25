@@ -12,6 +12,9 @@ interface ProfileRepository {
     suspend fun patchMe(
         fullName: String? = null,
         email: String? = null,
+        notifyNearby: Boolean? = null,
+        notifyClosingSoon: Boolean? = null,
+//        avatarUrl: String,
     ) : Result<ProfileDto, DataError>
 
     fun getMe(): Flow<ProfileEntity>
