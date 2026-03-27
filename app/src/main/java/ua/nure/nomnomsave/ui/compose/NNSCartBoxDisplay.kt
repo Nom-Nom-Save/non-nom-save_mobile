@@ -225,7 +225,7 @@ fun NSSCartBoxDisplayPreview(modifier: Modifier = Modifier) {
                 title = "Pastry Surprise Box",
                 url = "",
                 collectTill = "7 PM",
-                allergens = true,
+                allergens = false,
                 address = "Greyson st. 20",
                 grams = 200,
             )

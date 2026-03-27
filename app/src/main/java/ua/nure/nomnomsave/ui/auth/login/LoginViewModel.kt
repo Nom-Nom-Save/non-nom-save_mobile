@@ -70,9 +70,9 @@ class LoginViewModel @Inject constructor(
                 email = email,
                 password = password
             ).onSuccess {
-                //_event.emit(
-                    //Login.Event.OnNavigate(route = Screen.Profile.Dashboard)
-               // )
+                _event.emit(
+                    Login.Event.OnNavigate(route = Screen.List.ListView)
+                )
             }.onError { error ->
                 _state.update { it.copy(loginError = resourceRepository.getStringByResource(R.string.noMatches)) }
                 Log.e(TAG, "Login error: $error")

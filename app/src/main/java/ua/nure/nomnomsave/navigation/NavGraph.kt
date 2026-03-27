@@ -46,6 +46,8 @@ fun NavGraph(
             )
         }
 
+        cartGraph(navController = navController)
+        listGraph(navController = navController)
     }
 
 }

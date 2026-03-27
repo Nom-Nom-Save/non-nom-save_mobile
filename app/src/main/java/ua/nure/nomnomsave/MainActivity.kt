@@ -48,7 +48,10 @@ class MainActivity : ComponentActivity() {
                                     .fillMaxWidth()
                                     .background(color = AppTheme.color.background)
                                     .navigationBarsPadding()
-                                    .padding(start = AppTheme.dimension.small, end = AppTheme.dimension.small),
+                                    .padding(
+                                        start = AppTheme.dimension.small,
+                                        end = AppTheme.dimension.small
+                                    ),
                                 currentDestination = currentDestination,
                                 items = topLevelRoutes
                             ) { nestedGraphRoute ->
@@ -59,7 +62,6 @@ class MainActivity : ComponentActivity() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-
                             }
                         }
                     }
@@ -86,13 +88,9 @@ class MainActivity : ComponentActivity() {
 
 fun showBottomNavigationBar(navDestination: NavDestination?) =
     navDestination?.let { destination ->
-        destination.route in emptyList<String>(
-//        destination.route in listOf(
-//            Screen.Profile.Dashboard::class.qualifiedName,
-//            Screen.Profile.Settings::class.qualifiedName,
-//            Screen.Trainer.TrainerList::class.qualifiedName,
-//            Screen.Chat.ChatList::class.qualifiedName,
-//            Screen.Analytics.AnalyticsView::class.qualifiedName,
-//            Screen.OwnTrainer.View::class.qualifiedName,
+        destination.route in listOf(
+            Screen.Profile::class.qualifiedName,
+            Screen.Cart.CartList::class.qualifiedName,
+            Screen.List.ListView::class.qualifiedName,
         )
     } ?: false

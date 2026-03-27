@@ -60,4 +60,7 @@
     <string name="collectTil">Collect till %s</string>
     <string name="allergens">Allergens</string>
     <string name="showQR">Show QR</string>
+    <string name="cart">Cart</string>
+    <string name="list_view">List View</string>
+    <string name="searchPromt">Search for bakeries and restaurants</string>
 </resources>
