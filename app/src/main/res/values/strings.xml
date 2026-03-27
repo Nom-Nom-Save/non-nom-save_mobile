@@ -55,4 +55,9 @@
     <string name="invalidEmail">Invalid email format</string>
     <string name="invalidCode">Invalid code format</string>
     <string name="forgotPassword">Forgot password?</string>
+    <string name="details">Details</string>
+    <string name="reviews">Reviews</string>
+    <string name="openingHours">Opening Hours</string>
+    <string name="address">Address</string>
+    <string name="information">Information</string>
 </resources>
