@@ -67,7 +67,8 @@ fun NNSQRDialog(
             Image(
                 modifier = Modifier
                     .padding(AppTheme.dimension.normal)
-                    .size(200.dp),
+                    .size(200.dp)
+                    .clip(shape = RoundedCornerShape(40.dp)),
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = null
             )

@@ -29,19 +29,22 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import ua.nure.nomnomsave.App
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.ui.theme.AppTheme
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun NNSCartBoxDisplay(
     modifier: Modifier = Modifier,
     title: String,
     url: String,
-    collectTill: String,
+    collectTill: LocalDateTime,
     allergens: Boolean = false,
     address: String,
     grams: Int,
@@ -53,8 +56,8 @@ fun NNSCartBoxDisplay(
             .clip(RoundedCornerShape(40.dp))
             .background(color = AppTheme.color.cardBackground, shape = RoundedCornerShape(40.dp)),
 
-    ) {
-        if(LocalInspectionMode.current) {
+        ) {
+        if (LocalInspectionMode.current) {
             AsyncImage(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,28 +107,40 @@ fun NNSCartBoxDisplay(
             Text(
                 modifier = Modifier
                     .clip(AppTheme.shape.accentShape)
-                    .border(width = 1.dp, color = AppTheme.color.grey, shape = AppTheme.shape.accentShape)
+                    .border(
+                        width = 1.dp,
+                        color = AppTheme.color.grey,
+                        shape = AppTheme.shape.accentShape
+                    )
                     .padding(
                         horizontal = AppTheme.dimension.small,
                         vertical = 2.dp
-                    )
-                    ,
-                text = String.format(stringResource(R.string.collectTil), collectTill),
+                    ),
+                text = String
+                    .format(
+                        stringResource(R.string.collectTil),
+                        collectTill.format(
+                            DateTimeFormatter.ofPattern("HH:mm")
+                        )
+                    ),
                 style = AppTheme.typography.regular.copy(
                     color = AppTheme.color.grey
                 )
             )
-            if(allergens) {
+            if (allergens) {
                 Text(
                     modifier = Modifier
                         .padding(start = AppTheme.dimension.extraSmall)
                         .clip(AppTheme.shape.accentShape)
-                        .border(width = 1.dp, color = AppTheme.color.grey, shape = AppTheme.shape.accentShape)
+                        .border(
+                            width = 1.dp,
+                            color = AppTheme.color.grey,
+                            shape = AppTheme.shape.accentShape
+                        )
                         .padding(
                             horizontal = AppTheme.dimension.small,
                             vertical = 2.dp
-                        )
-                    ,
+                        ),
                     text = stringResource(R.string.allergens),
                     style = AppTheme.typography.regular.copy(
                         color = AppTheme.color.red
@@ -152,6 +167,8 @@ fun NNSCartBoxDisplay(
             ) {
                 Text(
                     text = address,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     style = AppTheme.typography.regular.copy(
                         color = AppTheme.color.grey
                     )
@@ -197,7 +214,7 @@ fun NNSCartBoxDisplay(
                             textAlign = TextAlign.Center,
                         ),
 
-                    )
+                        )
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         text = stringResource(R.string.code).lowercase(),
@@ -224,7 +241,7 @@ fun NSSCartBoxDisplayPreview(modifier: Modifier = Modifier) {
                 modifier = modifier,
                 title = "Pastry Surprise Box",
                 url = "",
-                collectTill = "7 PM",
+                collectTill = LocalDateTime.now(),
                 allergens = false,
                 address = "Greyson st. 20",
                 grams = 200,
@@ -244,7 +261,7 @@ fun NSSCartBoxDisplayDarkPreview(modifier: Modifier = Modifier) {
                 modifier = modifier,
                 title = "Pastry Surprise Box",
                 url = "",
-                collectTill = "7 PM",
+                collectTill = LocalDateTime.now(),
                 allergens = true,
                 address = "Greyson st. 20",
                 grams = 200,

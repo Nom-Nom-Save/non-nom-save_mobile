@@ -20,11 +20,16 @@ data class OrderDto(
     val totalPrice: Double,
     val orderStatus: OrderStatus,
     val qrCodeData: String,
-    val reservedAt: String?,
-    val expiresAt: String?,
-    val completedAt: String?,
+    val reservedAt: String? = null,
+    val expiresAt: String? = null,
+    val completedAt: String? = null,
     val details: List<OrderDetailDto>,
-    val establishmentName: String
+    val establishmentName: String,
+    val establishmentAddress: String,
+    val establishmentLogo: String,
+    val establishmentBanner: String? = null,
+    val allergens: List<String>,
+    val totalOrderWeight: Int
 )
 
 @Serializable
@@ -34,8 +39,13 @@ data class OrderDetailDto(
     val menuPriceId: String,
     val quantity: Int,
     val price: Double,
+    val originalPrice: Double,
+    val discountPrice: Double,
     val itemName: String,
-    val itemType: String
+    val itemType: String,
+    val weight: Int,
+    val minWeight: Int? = null,
+    val maxWeight: Int? = null
 )
 
 @Serializable(with = OrderStatusSerializer::class)

@@ -20,8 +20,8 @@ object Login {
 
     data class State(
         val inProgress: Boolean = false,
-        val email: String = if (BuildConfig.DEBUG) "john.dow@gmail.com" else "",
-        val password: String = if (BuildConfig.DEBUG) "Secret1" else "",
+        val email: String = if (BuildConfig.DEBUG) "alex.evseeva@gmail.com" else "",
+        val password: String = if (BuildConfig.DEBUG) "Secret123" else "",
         val loginError: String? = null,
     )
 }
