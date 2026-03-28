@@ -63,4 +63,9 @@
     <string name="cart">Cart</string>
     <string name="list_view">List View</string>
     <string name="searchPromt">Search for bakeries and restaurants</string>
+    <string name="details">Details</string>
+    <string name="reviews">Reviews</string>
+    <string name="openingHours">Opening Hours</string>
+    <string name="address">Address</string>
+    <string name="information">Information</string>
 </resources>
