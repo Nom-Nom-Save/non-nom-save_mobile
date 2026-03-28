@@ -10,6 +10,7 @@ import ua.nure.nomnomsave.db.DbRepository
 import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
+import ua.nure.nomnomsave.repository.dto.OrderDto
 import ua.nure.nomnomsave.repository.safeCall
 
 class OrderRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
@@ -17,8 +18,8 @@ class OrderRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
     private val dbRepository: DbRepository,
     @DbDeliveryDispatcher private val dbDeliveryDispatcher: CloseableCoroutineDispatcher,
 ) : OrderRepository {
-    override suspend fun orders(): Result<Any, DataError> = withContext(Dispatchers.IO) {
-        safeCall<Any> {
+    override suspend fun orders(): Result<OrderDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<OrderDto> {
             httpClient.get("orders") {
 
             }
