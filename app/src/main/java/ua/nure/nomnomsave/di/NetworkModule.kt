@@ -16,6 +16,8 @@ import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.plugin
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
@@ -86,14 +88,14 @@ object NetworkModule {
                 requestTimeoutMillis = 20_000L
             }
 
-//            install(Logging) {
-//                logger = object : io.ktor.client.plugins.logging.Logger {
-//                    override fun log(message: String) {
-//                        println(message)
-//                    }
-//                }
-//                level = LogLevel.ALL
-//            }
+            install(Logging) {
+                logger = object : io.ktor.client.plugins.logging.Logger {
+                    override fun log(message: String) {
+                        println(message)
+                    }
+                }
+                level = LogLevel.ALL
+            }
 
             HttpResponseValidator {
                 validateResponse { response ->

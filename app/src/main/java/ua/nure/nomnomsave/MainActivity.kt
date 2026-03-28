@@ -92,5 +92,6 @@ fun showBottomNavigationBar(navDestination: NavDestination?) =
             Screen.Profile::class.qualifiedName,
             Screen.Cart.CartList::class.qualifiedName,
             Screen.List.ListView::class.qualifiedName,
+            Screen.Favorite.FavoritesList::class.qualifiedName
         )
     } ?: false

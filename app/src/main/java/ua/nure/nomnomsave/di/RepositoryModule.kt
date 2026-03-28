@@ -23,6 +23,8 @@ import ua.nure.nomnomsave.repository.resource.ResourceRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepositoryImpl
 import ua.nure.nomnomsave.repository.token.TokenRepository
 import ua.nure.nomnomsave.repository.token.TokenRepositoryImpl
+import ua.nure.nomnomsave.repository.user.UserRepository
+import ua.nure.nomnomsave.repository.user.UserRepositoryImpl
 import javax.inject.Singleton
 
 
@@ -85,6 +87,18 @@ object RepositoryModule {
         @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
         dbRepository: DbRepository,
     ): OrderRepository = OrderRepositoryImpl(
+        httpClient = httpClient,
+        dbDeliveryDispatcher = dbDeliveryDispatcher,
+        dbRepository = dbRepository
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Provides
+    fun provideUserRepository(
+        httpClient: HttpClient,
+        @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
+        dbRepository: DbRepository,
+    ): UserRepository = UserRepositoryImpl(
         httpClient = httpClient,
         dbDeliveryDispatcher = dbDeliveryDispatcher,
         dbRepository = dbRepository

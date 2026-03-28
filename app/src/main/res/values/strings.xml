@@ -69,4 +69,5 @@
     <string name="address">Address</string>
     <string name="information">Information</string>
     <string name="collectTill">Collect till %s</string>
+    <string name="favorite">Favorites</string>
 </resources>

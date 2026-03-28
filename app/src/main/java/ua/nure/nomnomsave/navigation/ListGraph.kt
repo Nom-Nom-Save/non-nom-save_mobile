@@ -6,6 +6,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import ua.nure.nomnomsave.ui.compose.NNSScreen
+import ua.nure.nomnomsave.ui.theme.AppTheme
 
 fun NavGraphBuilder.listGraph(
     navController: NavController
@@ -16,10 +17,12 @@ fun NavGraphBuilder.listGraph(
         composable<Screen.List.ListView> {
             NNSScreen() {
                 Text(
-                    text = "Screen.List.ListView"
+                    text = "Screen.List.ListView",
+                    style = AppTheme.typography.large.copy(
+                        color = AppTheme.color.accent
+                    )
                 )
             }
         }
-
     }
 }

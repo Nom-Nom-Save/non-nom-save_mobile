@@ -39,15 +39,11 @@ fun NavGraph(
                 navController = navController
             )
         }
-        composable<Screen.Profile> {
-            ProfileScreen(
-                viewModel = hiltViewModel(),
-                navController = navController
-            )
-        }
 
         cartGraph(navController = navController)
         listGraph(navController = navController)
+        favoriteGraph(navController = navController)
+        profileGraph(navController = navController)
     }
 
 }

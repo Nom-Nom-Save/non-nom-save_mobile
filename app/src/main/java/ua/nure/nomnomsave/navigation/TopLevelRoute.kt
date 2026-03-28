@@ -13,16 +13,23 @@ data class TopLevelRoute<T: Any>(
 
 val topLevelRoutes = listOf<TopLevelRoute<NestedGraph>>(
     TopLevelRoute(
+        route = NestedGraph.Favorite,
+        title = R.string.favorite,
+        selectedIcon = R.drawable.favorite_active,
+        unselectedIcon = R.drawable.favorite_passive
+    ),
+    TopLevelRoute(
+        route = NestedGraph.ListView,
+        title = R.string.list_view,
+        selectedIcon = R.drawable.list_active,
+        unselectedIcon = R.drawable.list_passive
+
+    ),
+    TopLevelRoute(
         route = NestedGraph.Cart,
         title = R.string.cart,
         selectedIcon = R.drawable.cart_active,
         unselectedIcon = R.drawable.cart_passive
-    ),
-    TopLevelRoute(
-        route = NestedGraph.Cart,
-        title = R.string.list_view,
-        selectedIcon = R.drawable.list_active,
-        unselectedIcon = R.drawable.list_passive
     ),
     TopLevelRoute(
         route = NestedGraph.Profile,

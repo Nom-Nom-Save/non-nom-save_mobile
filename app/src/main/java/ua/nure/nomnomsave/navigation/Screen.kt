@@ -33,4 +33,10 @@ sealed class Screen {
         @Serializable
         data object Establishment : List()
     }
+
+    @Serializable
+    sealed class Favorite: Screen() {
+        @Serializable
+        data object FavoritesList : Favorite()
+    }
 }

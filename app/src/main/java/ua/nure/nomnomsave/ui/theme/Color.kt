@@ -18,6 +18,7 @@ data class AppColors(
     val grey: Color = Color.Unspecified,
     val red: Color = Color.Unspecified,
     val error: Color = Color.Unspecified,
+    val ratingColor: Color = Color.Unspecified
 )
 
 internal val LightColors = AppColors(
@@ -29,6 +30,7 @@ internal val LightColors = AppColors(
     grey = Color(0xFF94A3B8),
     red = Color(0xFFEF4444),
     error = Color(0xFFEF4444),
+    ratingColor = Color(0xFFF59E0B),
 )
 
 internal val DarkColors = AppColors(
@@ -40,4 +42,5 @@ internal val DarkColors = AppColors(
     grey = Color(0xFFA0A0A0),
     red = Color(0xFFEF4444),
     error = Color(0xFFEF4444),
+    ratingColor = Color(0xFFF59E0B),
 )
