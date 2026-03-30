@@ -30,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,8 +41,12 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
+import ua.nure.nomnomsave.db.data.entity.ItemDetailsEntity
+import ua.nure.nomnomsave.db.data.entity.MenuEntity
+import ua.nure.nomnomsave.db.data.entity.PriceDataEntity
+import ua.nure.nomnomsave.ui.compose.NNSMenuBottomSheet
+import ua.nure.nomnomsave.ui.compose.NNSMenuCard
 import ua.nure.nomnomsave.ui.compose.NNSScreen
-import ua.nure.nomnomsave.ui.profile.Profile
 import ua.nure.nomnomsave.ui.theme.AppTheme
 
 enum class DetailsTab {
@@ -66,19 +69,20 @@ fun EstablishmentDetailsScreen(
         }
     }
 
-    EstablishmentDetailsScreenContent(
+    EstablishmentDetailsScreen(
         state = state,
         onAction = viewModel::onAction
     )
 }
 
 @Composable
-fun EstablishmentDetailsScreenContent(
+fun EstablishmentDetailsScreen(
     state: EstablishmentDetails.State,
     onAction: (EstablishmentDetails.Action) -> Unit
 ) {
     val scrollState = rememberScrollState()
     var selectedTab by remember { mutableStateOf(DetailsTab.DETAILS) }
+    var selectedMenuItem by remember { mutableStateOf<MenuEntity?>(null) }
 
     NNSScreen {
         Box(
@@ -109,10 +113,7 @@ fun EstablishmentDetailsScreenContent(
                         modifier = Modifier
                             .size(AppTheme.dimension.iconSize)
                             .clip(shape = CircleShape)
-                            .padding(AppTheme.dimension.extraSmall)
-                            .clickable {
-                                onAction(EstablishmentDetails.Action.OnBack)
-                            },
+                            .padding(AppTheme.dimension.extraSmall),
                         painter = painterResource(R.drawable.arrow_back),
                         tint = AppTheme.color.foreground,
                         contentDescription = null
@@ -130,10 +131,7 @@ fun EstablishmentDetailsScreenContent(
                         modifier = Modifier
                             .size(AppTheme.dimension.iconSize)
                             .clip(shape = CircleShape)
-                            .padding(AppTheme.dimension.extraSmall)
-                            .clickable {
-                                onAction(EstablishmentDetails.Action.OnBack)
-                            },
+                            .padding(AppTheme.dimension.extraSmall),
                         painter = painterResource(R.drawable.favorite_active),
                         tint = AppTheme.color.foreground,
                         contentDescription = null
@@ -155,6 +153,7 @@ fun EstablishmentDetailsScreenContent(
                         .background(color = AppTheme.color.background)
                         .padding(horizontal = AppTheme.dimension.normal, vertical = AppTheme.dimension.large)
                 ) {
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -178,11 +177,7 @@ fun EstablishmentDetailsScreenContent(
                             Icon(
                                 modifier = Modifier
                                     .size(AppTheme.dimension.iconSize)
-                                    .clip(shape = CircleShape)
-                                    .padding(AppTheme.dimension.extraSmall)
-                                    .clickable {
-                                        onAction(EstablishmentDetails.Action.OnBack)
-                                    },
+                                    .padding(AppTheme.dimension.extraSmall),
                                 painter = painterResource(R.drawable.star_rate),
                                 tint = AppTheme.color.active,
                                 contentDescription = null
@@ -190,6 +185,7 @@ fun EstablishmentDetailsScreenContent(
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(AppTheme.dimension.normal))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -233,11 +229,48 @@ fun EstablishmentDetailsScreenContent(
                             modifier = Modifier.padding(vertical = AppTheme.dimension.normal)
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(AppTheme.dimension.large))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = AppTheme.dimension.large),
+                        verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.normal)
+                    ) {
+                        state.menu?.forEach { menuItem ->
+                            NNSMenuCard(
+                                modifier = Modifier.clickable {
+                                    selectedMenuItem = menuItem
+                                },
+                                title = menuItem.itemDetails?.name ?: "Unknown",
+                                url = menuItem.itemDetails?.picture ?: "",
+                                collectTill = menuItem.priceData?.endTime ?: "N/A",
+                                allergens = !menuItem.itemDetails?.allergens.isNullOrEmpty(),
+                                grams = menuItem.itemDetails?.weightInfo?.filter { it.isDigit() }?.toIntOrNull() ?: 0,
+                                picture = menuItem.itemDetails?.picture ?: ""
+                            )
+                        }
+                    }
+
                 }
             }
         }
+        selectedMenuItem?.let { item ->
+            NNSMenuBottomSheet(
+                menuItem = item,
+                onDismiss = { selectedMenuItem = null },
+                onReserve = { quantity ->
+                    println("Reserved $quantity items!")
+                    selectedMenuItem = null
+                }
+            )
+        }
     }
 }
+
+
+
 @Composable
 private fun InfoSection(
     title: String,
@@ -265,7 +298,7 @@ private fun TabItem(
     onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -280,7 +313,7 @@ private fun TabItem(
             Box(
                 modifier = Modifier
                     .height(2.dp)
-                    .width(40.dp)
+                    .width(AppTheme.dimension.iconSize)
                     .background(color = AppTheme.color.active, shape = RoundedCornerShape(1.dp))
             )
         } else {
@@ -293,7 +326,7 @@ private fun TabItem(
 @Composable
 fun EstablishmentDetailsScreenPreview() {
     AppTheme {
-        EstablishmentDetailsScreenContent(
+        EstablishmentDetailsScreen(
             state = EstablishmentDetails.State(
                 establishment = EstablishmentEntity(
                     id = "1",
@@ -303,6 +336,19 @@ fun EstablishmentDetailsScreenPreview() {
                     description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi fringilla sit amet magna vitae tincidunt. Mauris non lectus id lectus aliquam porta sed pretium tellus.",
                     rating = "5",
                     isEmailVerified = true,
+                ),
+                menu = listOf(
+                    MenuEntity(
+                        id = "m1",
+                        itemDetails = ItemDetailsEntity(
+                            name = "Pastry Surprise Box",
+                            weightInfo = "200g",
+                            allergens = listOf("Gluten", "Nuts")
+                        ),
+                        priceData = PriceDataEntity(
+                            endTime = "19:00"
+                        )
+                    )
                 )
             ),
             onAction = {}
@@ -314,7 +360,7 @@ fun EstablishmentDetailsScreenPreview() {
 @Composable
 fun EstablishmentDetailsScreenDarkPreview() {
     AppTheme {
-        EstablishmentDetailsScreenContent(
+        EstablishmentDetailsScreen(
             state = EstablishmentDetails.State(
                 establishment = EstablishmentEntity(
                     id = "1",
@@ -324,6 +370,19 @@ fun EstablishmentDetailsScreenDarkPreview() {
                     description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi fringilla sit amet magna vitae tincidunt. Mauris non lectus id lectus aliquam porta sed pretium tellus.",
                     rating = "5",
                     isEmailVerified = true
+                ),
+                menu = listOf(
+                    MenuEntity(
+                        id = "m1",
+                        itemDetails = ItemDetailsEntity(
+                            name = "Pastry Surprise Box",
+                            weightInfo = "200g",
+                            allergens = listOf("Gluten", "Nuts")
+                        ),
+                        priceData = PriceDataEntity(
+                            endTime = "19:00"
+                        )
+                    )
                 )
             ),
             onAction = {}

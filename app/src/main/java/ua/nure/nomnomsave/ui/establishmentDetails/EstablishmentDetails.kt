@@ -1,7 +1,8 @@
 package ua.nure.nomnomsave.ui.establishmentDetails
 
+import android.view.Menu
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
-import ua.nure.nomnomsave.db.data.entity.ProfileEntity
+import ua.nure.nomnomsave.db.data.entity.MenuEntity
 import ua.nure.nomnomsave.navigation.Screen
 
 object EstablishmentDetails {
@@ -18,5 +19,6 @@ object EstablishmentDetails {
     data class State(
         val establishment: EstablishmentEntity? = null,
         val inProgress: Boolean = false,
+        val menu: List<MenuEntity>? = null,
         )
 }

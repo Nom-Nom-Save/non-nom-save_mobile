@@ -1,6 +1,7 @@
 package ua.nure.nomnomsave.db.data
 
 import androidx.room.TypeConverter
+import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -20,6 +21,16 @@ class DbConverters {
             ?.let { Instant.ofEpochMilli(it) }
             ?.atZone(ZoneId.systemDefault())
             ?.toLocalDateTime()
+    }
+
+    @TypeConverter
+    fun fromStringList(value: List<String>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toStringList(value: String?): List<String>? {
+        return value?.let { Json.decodeFromString(it) }
     }
 
 }

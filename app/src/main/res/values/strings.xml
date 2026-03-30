@@ -70,4 +70,8 @@
     <string name="information">Information</string>
     <string name="collectTill">Collect till %s</string>
     <string name="favorite">Favorites</string>
+    <string name="toCart">To cart</string>
+    <string name="pickUpTime">To cart</string>
+    <string name="types">Types</string>
+    <string name="itemsLeft">%s items left</string>
 </resources>
