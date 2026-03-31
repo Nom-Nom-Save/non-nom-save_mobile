@@ -31,7 +31,7 @@ sealed class Screen {
         @Serializable
         data object ListView : List()
         @Serializable
-        data object Establishment : List()
+        data class EstablishmentDetails(val id: String) : List()
     }
 
     @Serializable

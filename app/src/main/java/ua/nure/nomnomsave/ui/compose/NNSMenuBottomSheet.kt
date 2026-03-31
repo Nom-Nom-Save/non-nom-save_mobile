@@ -1,5 +1,6 @@
 package ua.nure.nomnomsave.ui.compose
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -32,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ua.nure.nomnomsave.R
@@ -39,9 +40,6 @@ import ua.nure.nomnomsave.db.data.entity.ItemDetailsEntity
 import ua.nure.nomnomsave.db.data.entity.MenuEntity
 import ua.nure.nomnomsave.db.data.entity.PriceDataEntity
 import ua.nure.nomnomsave.ui.theme.AppTheme
-import android.content.res.Configuration
-import androidx.compose.ui.tooling.preview.Preview
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +49,7 @@ fun NNSMenuBottomSheet(
     onReserve: (Int) -> Unit
 ) {
     var quantity by remember { mutableIntStateOf(1) }
-    val maxQuantity = menuItem.priceData?.availableQuantity ?: 10
+    val maxQuantity = (menuItem.priceData?.availableQuantity ?: 10).coerceAtLeast(1)
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -100,7 +98,7 @@ fun NNSMenuBottomSheet(
             Spacer(modifier = Modifier.height(AppTheme.dimension.normal))
 
             Text(
-                text = String.format(stringResource(R.string.itemsLeft), menuItem.priceData?.availableQuantity),
+                text = String.format(stringResource(R.string.itemsLeft), menuItem.priceData?.availableQuantity ?: 0),
                 style = AppTheme.typography.regular.copy(fontWeight = FontWeight.Bold)
             )
 
@@ -111,7 +109,7 @@ fun NNSMenuBottomSheet(
                 style = AppTheme.typography.large.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                text = String.format(stringResource(R.string.collectTil), menuItem.priceData?.endTime),
+                text = String.format(stringResource(R.string.collectTil), menuItem.priceData?.endTime ?: "N/A"),
                 style = AppTheme.typography.regular
             )
 
@@ -142,22 +140,28 @@ fun NNSMenuBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .border(1.dp, AppTheme.color.grey.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                        .clip(RoundedCornerShape(AppTheme.dimension.small))
+                        .clip(RoundedCornerShape(8.dp))
                 ) {
+                    // Кнопка МИНУС
                     Box(
                         modifier = Modifier
-                            .size(AppTheme.dimension.iconSize)
+                            .size(36.dp)
                             .clickable { if (quantity > 1) quantity-- },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(painter = painterResource(id = R.drawable.minus), contentDescription = "-", tint = AppTheme.color.grey)
+                        Icon(
+                            painter = painterResource(id = R.drawable.minus),
+                            contentDescription = "-",
+                            tint = AppTheme.color.grey,
+                            modifier = Modifier.size(AppTheme.dimension.iconSize)
+                        )
                     }
 
                     Box(
                         modifier = Modifier
                             .background(AppTheme.color.grey.copy(alpha = 0.2f))
-                            .height(AppTheme.dimension.iconSize)
-                            .padding(AppTheme.dimension.normal),
+                            .height(36.dp)
+                            .padding(horizontal = AppTheme.dimension.normal),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = quantity.toString(), style = AppTheme.typography.large)
@@ -165,11 +169,16 @@ fun NNSMenuBottomSheet(
 
                     Box(
                         modifier = Modifier
-                            .size(AppTheme.dimension.iconSize)
+                            .size(36.dp)
                             .clickable { if (quantity < maxQuantity) quantity++ },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(painter = painterResource(id = R.drawable.plus), contentDescription = "+", tint = AppTheme.color.grey)
+                        Icon(
+                            painter = painterResource(id = R.drawable.plus),
+                            contentDescription = "+",
+                            tint = AppTheme.color.grey,
+                            modifier = Modifier.size(AppTheme.dimension.iconSize)
+                        )
                     }
                 }
             }
@@ -187,6 +196,7 @@ fun NNSMenuBottomSheet(
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun NNSMenuBottomSheetPreview() {
