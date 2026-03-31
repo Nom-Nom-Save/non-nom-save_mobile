@@ -71,7 +71,6 @@ private fun ListScreenContent(
             .fillMaxSize()
             .background(AppTheme.color.background)
     ) {
-        // Search bar — NNSInputField з проекту
         NNSInputField(
             modifier = Modifier
                 .fillMaxWidth()
@@ -124,7 +123,6 @@ private fun ListScreenContent(
                 )
             }
             item {
-                // "Filters" chip — без стрілки, outlined стиль
                 FilterChip(
                     label = stringResource(R.string.filters),
                     onClick = { onAction(List.Action.OnShowFilters) }
@@ -132,7 +130,6 @@ private fun ListScreenContent(
             }
         }
 
-        // List content
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -217,7 +214,6 @@ private fun SortChip(
     }
 }
 
-// Chip без фону, лише border — для Filters
 @Composable
 private fun FilterChip(
     label: String,

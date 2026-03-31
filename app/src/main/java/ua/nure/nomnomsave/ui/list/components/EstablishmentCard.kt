@@ -47,7 +47,6 @@ fun EstablishmentCard(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
     ) {
-        // Thumbnail
         if (LocalInspectionMode.current) {
             AsyncImage(
                 model = R.drawable.placeholder_image,
@@ -68,12 +67,10 @@ fun EstablishmentCard(
             )
         }
 
-        // Info
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            // Name + Rating badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
