@@ -74,4 +74,14 @@
     <string name="pickUpTime">To cart</string>
     <string name="types">Types</string>
     <string name="itemsLeft">%s items left</string>
+    <string name="price">Price</string>
+    <string name="distance">Distance</string>
+    <string name="rating">Rating</string>
+    <string name="filters">Filters</string>
+    <string name="filterUpToKm">Up to %1$d km</string>
+    <string name="filter1km">1 km</string>
+    <string name="filter10km">10 km</string>
+    <string name="filter1star">1+</string>
+    <string name="filter5star">5</string>
+    <string name="filterTimeUntilClosing">Time Until Closing</string>
 </resources>

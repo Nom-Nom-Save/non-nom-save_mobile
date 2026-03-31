@@ -15,6 +15,8 @@ import ua.nure.nomnomsave.db.DbRepository
 import ua.nure.nomnomsave.db.DbRepositoryImpl
 import ua.nure.nomnomsave.repository.auth.AuthRepository
 import ua.nure.nomnomsave.repository.auth.AuthRepositoryImpl
+import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
+import ua.nure.nomnomsave.repository.establishment.EstablishmentRepositoryImpl
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.order.OrderRepositoryImpl
 import ua.nure.nomnomsave.repository.profile.ProfileRepository
@@ -28,6 +30,7 @@ import ua.nure.nomnomsave.repository.user.UserRepositoryImpl
 import javax.inject.Singleton
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
@@ -99,6 +102,17 @@ object RepositoryModule {
         @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
         dbRepository: DbRepository,
     ): UserRepository = UserRepositoryImpl(
+        httpClient = httpClient,
+        dbDeliveryDispatcher = dbDeliveryDispatcher,
+        dbRepository = dbRepository
+    )
+
+    @Provides
+    fun provideEstablishmentRepository(
+        httpClient: HttpClient,
+        @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
+        dbRepository: DbRepository,
+    ): EstablishmentRepository = EstablishmentRepositoryImpl(
         httpClient = httpClient,
         dbDeliveryDispatcher = dbDeliveryDispatcher,
         dbRepository = dbRepository
