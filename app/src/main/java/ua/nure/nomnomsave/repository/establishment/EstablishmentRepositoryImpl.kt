@@ -19,6 +19,8 @@ import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.dto.EstablishmentDetailDto
 import ua.nure.nomnomsave.repository.dto.EstablishmentDetailPrivateDto
+import ua.nure.nomnomsave.repository.dto.EstablishmentListResponse
+import ua.nure.nomnomsave.repository.dto.EstablishmentResponse
 import ua.nure.nomnomsave.repository.dto.UpdateEstablishmentInput
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.safeCall
@@ -32,23 +34,37 @@ class EstablishmentRepositoryImpl(
 
     override suspend fun getAllEstablishments(): Result<List<EstablishmentDetailDto>, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<List<EstablishmentDetailDto>> {
+            safeCall<EstablishmentListResponse> {
                 httpClient.get("establishments")
-            }.onSuccess { establishments ->
-                dbRepository.db.establishedDao.insert(
-                    establishments.map { it.toEntity() }
-                )
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishments = result.data.establishments
+                        dbRepository.db.establishedDao.insert(
+                            establishments.map { it.toEntity() }
+                        )
+                        Result.Success(establishments)
+                    }
+                    is Result.Error -> result
+                }
             }
         }
 
     override suspend fun getEstablishmentsByCity(city: String): Result<List<EstablishmentDetailDto>, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<List<EstablishmentDetailDto>> {
+            safeCall<EstablishmentListResponse> {
                 httpClient.get("establishments?city=$city")
-            }.onSuccess { establishments ->
-                dbRepository.db.establishedDao.insert(
-                    establishments.map { it.toEntity() }
-                )
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishments = result.data.establishments
+                        dbRepository.db.establishedDao.insert(
+                            establishments.map { it.toEntity() }
+                        )
+                        Result.Success(establishments)
+                    }
+                    is Result.Error -> result
+                }
             }
         }
 
@@ -58,30 +74,74 @@ class EstablishmentRepositoryImpl(
         radiusKm: Double,
     ): Result<List<EstablishmentDetailDto>, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<List<EstablishmentDetailDto>> {
+            safeCall<EstablishmentListResponse> {
                 httpClient.get("establishments/nearby?lat=$lat&lon=$lon&radius=$radiusKm")
-            }.onSuccess { establishments ->
-                dbRepository.db.establishedDao.insert(
-                    establishments.map { it.toEntity() }
-                )
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishments = result.data.establishments
+                        dbRepository.db.establishedDao.insert(
+                            establishments.map { it.toEntity() }
+                        )
+                        Result.Success(establishments)
+                    }
+                    is Result.Error -> result
+                }
             }
         }
 
     override suspend fun getEstablishmentById(id: String): Result<EstablishmentDetailDto, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<EstablishmentDetailDto> {
+            safeCall<EstablishmentResponse> {
                 httpClient.get("establishments/$id")
-            }.onSuccess { establishment ->
-                dbRepository.db.establishedDao.insertOne(establishment.toEntity())
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishment = result.data.establishment
+                        if (establishment != null) {
+                            dbRepository.db.establishedDao.insertOne(establishment.toEntity())
+                            Result.Success(EstablishmentDetailDto(
+                                id = establishment.id,
+                                email = establishment.email,
+                                name = establishment.name,
+                                description = establishment.description,
+                                address = establishment.address,
+                                latitude = establishment.latitude,
+                                longitude = establishment.longitude,
+                                workingHours = establishment.workingHours,
+                                logo = establishment.logo,
+                                banner = establishment.banner,
+                                rating = establishment.rating,
+                                createdAt = establishment.createdAt,
+                                isEmailVerified = establishment.isEmailVerified,
+                                status = establishment.status
+                            ))
+                        } else {
+                            Result.Error(DataError.Remote.UNKNOWN)
+                        }
+                    }
+                    is Result.Error -> result
+                }
             }
         }
 
     override suspend fun getEstablishmentPrivate(): Result<EstablishmentDetailPrivateDto, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<EstablishmentDetailPrivateDto> {
+            safeCall<EstablishmentResponse> {
                 httpClient.get("establishments/profile")
-            }.onSuccess { establishment ->
-                dbRepository.db.establishedDao.insertOne(establishment.toEntity())
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishment = result.data.establishment
+                        if (establishment != null) {
+                            dbRepository.db.establishedDao.insertOne(establishment.toEntity())
+                            Result.Success(establishment)
+                        } else {
+                            Result.Error(DataError.Remote.UNKNOWN)
+                        }
+                    }
+                    is Result.Error -> result
+                }
             }
         }
 
@@ -89,12 +149,23 @@ class EstablishmentRepositoryImpl(
         updateData: UpdateEstablishmentInput,
     ): Result<EstablishmentDetailPrivateDto, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<EstablishmentDetailPrivateDto> {
+            safeCall<EstablishmentResponse> {
                 httpClient.patch("establishments") {
                     setBody(updateData)
                 }
-            }.onSuccess { establishment ->
-                dbRepository.db.establishedDao.insertOne(establishment.toEntity())
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishment = result.data.establishment
+                        if (establishment != null) {
+                            dbRepository.db.establishedDao.insertOne(establishment.toEntity())
+                            Result.Success(establishment)
+                        } else {
+                            Result.Error(DataError.Remote.UNKNOWN)
+                        }
+                    }
+                    is Result.Error -> result
+                }
             }
         }
 
@@ -111,7 +182,6 @@ class EstablishmentRepositoryImpl(
     override suspend fun refreshEstablishments(): Unit = withContext(Dispatchers.IO) {
         getAllEstablishments()
     }
-
     override suspend fun clearCache(): Unit = withContext(Dispatchers.IO) {
         dbRepository.db.establishedDao.deleteAll()
     }
