@@ -10,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -48,8 +49,10 @@ class ProfileRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor
         notifyClosingSoon: Boolean?,
         avatarUrl: String?
     ): Result<ProfileDto, DataError> = withContext(Dispatchers.IO) {
+        val profile = dbRepository.db.profileDao.getProfileEntity().firstOrNull()
+
         safeCall<ProfileDto> {
-            httpClient.patch("users/me") {
+            httpClient.patch("users/${profile?.id ?: ""}") {
                 setBody(
                     ProfileRequest(
                         fullName = fullName,
@@ -63,6 +66,7 @@ class ProfileRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor
         }.onSuccess { profileDto ->
             dbRepository.db.profileDao.insert(profileDto.toEntity())
         }
+
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
