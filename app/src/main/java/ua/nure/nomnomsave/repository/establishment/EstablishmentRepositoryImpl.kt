@@ -182,7 +182,6 @@ class EstablishmentRepositoryImpl(
     override suspend fun refreshEstablishments(): Unit = withContext(Dispatchers.IO) {
         getAllEstablishments()
     }
-
     override suspend fun clearCache(): Unit = withContext(Dispatchers.IO) {
         dbRepository.db.establishedDao.deleteAll()
     }
