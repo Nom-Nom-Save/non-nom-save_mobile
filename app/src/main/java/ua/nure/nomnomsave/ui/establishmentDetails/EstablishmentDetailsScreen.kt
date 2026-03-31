@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,53 +91,25 @@ fun EstablishmentDetailsScreen(
                 .fillMaxSize()
                 .background(color = AppTheme.color.background)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(320.dp)
-            ) {
+
+            if (LocalInspectionMode.current) {
                 AsyncImage(
-                    modifier = Modifier.fillMaxSize(),
-                    model = state.establishment?.banner,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp),
+                    model = R.drawable.placeholder_image,
                     contentDescription = "Establishment Photo",
                     contentScale = ContentScale.Crop
                 )
-
-                IconButton(
+            } else {
+                AsyncImage(
                     modifier = Modifier
-                        .padding(AppTheme.dimension.normal)
-                        .align(Alignment.TopStart)
-                        .background(color = AppTheme.color.background.copy(alpha = 0.7f), shape = CircleShape),
-                    onClick = { onAction(EstablishmentDetails.Action.OnBack) }
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(AppTheme.dimension.iconSize)
-                            .clip(shape = CircleShape)
-                            .padding(AppTheme.dimension.extraSmall),
-                        painter = painterResource(R.drawable.arrow_back),
-                        tint = AppTheme.color.foreground,
-                        contentDescription = null
-                    )
-                }
-
-                IconButton(
-                    modifier = Modifier
-                        .padding(AppTheme.dimension.normal)
-                        .align(Alignment.TopEnd)
-                        .background(color = AppTheme.color.background, shape = CircleShape),
-                    onClick = { }
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(AppTheme.dimension.iconSize)
-                            .clip(shape = CircleShape)
-                            .padding(AppTheme.dimension.extraSmall),
-                        painter = painterResource(R.drawable.favorite_active),
-                        tint = AppTheme.color.foreground,
-                        contentDescription = null
-                    )
-                }
+                        .fillMaxWidth()
+                        .height(320.dp),
+                    model = state.establishment?.banner ?: state.establishment?.logo,
+                    contentDescription = "Establishment Photo",
+                    contentScale = ContentScale.Crop
+                )
             }
 
             Column(
@@ -255,7 +228,48 @@ fun EstablishmentDetailsScreen(
 
                 }
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppTheme.dimension.normal),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                IconButton(
+                    modifier = Modifier
+                        .background(color = AppTheme.color.background.copy(alpha = 0.7f), shape = CircleShape),
+                    onClick = { onAction(EstablishmentDetails.Action.OnBack) }
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(AppTheme.dimension.iconSize)
+                            .clip(shape = CircleShape)
+                            .padding(AppTheme.dimension.extraSmall),
+                        painter = painterResource(R.drawable.arrow_back),
+                        tint = AppTheme.color.foreground,
+                        contentDescription = null
+                    )
+                }
+
+                IconButton(
+                    modifier = Modifier
+                        .background(color = AppTheme.color.background, shape = CircleShape),
+                    onClick = { }
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(AppTheme.dimension.iconSize)
+                            .clip(shape = CircleShape)
+                            .padding(AppTheme.dimension.extraSmall),
+                        painter = painterResource(R.drawable.favorite_active),
+                        tint = AppTheme.color.foreground,
+                        contentDescription = null
+                    )
+                }
+            }
         }
+
         selectedMenuItem?.let { item ->
             NNSMenuBottomSheet(
                 menuItem = item,
@@ -268,8 +282,6 @@ fun EstablishmentDetailsScreen(
         }
     }
 }
-
-
 
 @Composable
 private fun InfoSection(

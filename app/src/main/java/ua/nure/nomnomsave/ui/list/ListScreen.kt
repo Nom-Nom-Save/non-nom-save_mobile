@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
+import ua.nure.nomnomsave.navigation.Screen
 import ua.nure.nomnomsave.ui.compose.NNSInputField
 import ua.nure.nomnomsave.ui.list.components.EstablishmentCard
 import ua.nure.nomnomsave.ui.list.components.FiltersBottomSheet
@@ -160,7 +161,7 @@ private fun ListScreenContent(
                                 onAction(List.Action.OnFavoriteToggle(id = entity.id))
                             },
                             onClick = {
-                                // onAction(List.Action.OnNavigate(Screen.Establishment(entity.id)))
+                                 onAction(List.Action.OnNavigate(Screen.List.EstablishmentDetails(entity.id)))
                             }
                         )
                     }
