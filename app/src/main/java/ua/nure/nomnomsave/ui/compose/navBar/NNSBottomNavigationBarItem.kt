@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +41,7 @@ fun NNSNavigationBarItem(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
+            modifier = Modifier.size(32.dp),
             painter = painterResource(if(isSelected) item.selectedIcon else item.unselectedIcon),
             contentDescription = null,
             tint = if (isSelected) AppTheme.color.accent else AppTheme.color.grey
