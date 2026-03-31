@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -16,11 +17,13 @@ import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
 import ua.nure.nomnomsave.repository.onError
 import ua.nure.nomnomsave.repository.onSuccess
+import ua.nure.nomnomsave.repository.user.UserRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class ListViewModel @Inject constructor(
     private val establishmentRepository: EstablishmentRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
     private val TAG by lazy { ListViewModel::class.simpleName }
 
@@ -33,7 +36,11 @@ class ListViewModel @Inject constructor(
     init {
         observeEstablishments()
         refreshEstablishments()
+        observeFavorites()
     }
+
+    private var updateFavoriteJob: Job? = null
+    private var getFavoritesJob: Job? = null
 
     private fun observeEstablishments() {
         establishmentRepository.getAllEstablishmentsFlow()
@@ -70,11 +77,15 @@ class ListViewModel @Inject constructor(
             }
 
             is List.Action.OnFavoriteToggle -> {
-                _state.update { s ->
-                    val updated = if (s.favorites.contains(action.id))
-                        s.favorites - action.id else s.favorites + action.id
-                    s.copy(favorites = updated)
-                }
+                state.value.favorites?.firstOrNull { it.establishment.id == action.id }
+                    ?.let { favorite ->
+                        deleteFromFavorites(
+                            favoriteId = favorite.favoriteEntity.id,
+                            establishmentId = favorite.establishment.id
+                        )
+                    } ?: run {
+                    addToFavorite(establishmentId = action.id)
+                    }
             }
 
             List.Action.OnShowFilters -> {
@@ -142,5 +153,32 @@ class ListViewModel @Inject constructor(
                     else -> list
                 }
             }
+    }
+
+    private fun addToFavorite(establishmentId: String) = viewModelScope.launch {
+        userRepository.addToFavorites(
+            establishmentId = establishmentId
+        )
+    }
+
+    private fun deleteFromFavorites(favoriteId: String, establishmentId: String) =
+        viewModelScope.launch {
+            userRepository.deleteFromFavorites(
+                favoriteId = favoriteId,
+                establishmentId = establishmentId
+            )
+        }
+
+    private fun observeFavorites() {
+        getFavoritesJob?.cancel()
+        getFavoritesJob = viewModelScope.launch {
+            userRepository.getFavorites().collect { list ->
+                _state.update { s ->
+                    s.copy(
+                        favorites = list
+                    )
+                }
+            }
+        }
     }
 }

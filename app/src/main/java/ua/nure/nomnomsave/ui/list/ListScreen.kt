@@ -155,7 +155,7 @@ private fun ListScreenContent(
                     ) { entity ->
                         EstablishmentCard(
                             entity = entity,
-                            isFavorite = state.favorites.contains(entity.id),
+                            isFavorite = state.favorites?.any {it.establishment.id == entity.id} ?: false,
                             onFavoriteClick = {
                                 onAction(List.Action.OnFavoriteToggle(id = entity.id))
                             },

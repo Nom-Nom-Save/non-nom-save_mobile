@@ -1,7 +1,10 @@
 package ua.nure.nomnomsave.ui.list
 
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
+import ua.nure.nomnomsave.db.data.entity.Favorite
+import ua.nure.nomnomsave.db.data.entity.FavoriteEntity
 import ua.nure.nomnomsave.navigation.Screen
+import kotlin.collections.List
 
 object List {
     sealed interface Event {
@@ -27,7 +30,7 @@ object List {
         val searchQuery: String = "",
         val isLoading: Boolean = false,
         val showFilters: Boolean = false,
-        val favorites: Set<String> = emptySet(),
+        val favorites: List<Favorite>? = null,
         // Active filters
         val maxDistanceKm: Float = 8f,
         val minRating: Float = 1f,
