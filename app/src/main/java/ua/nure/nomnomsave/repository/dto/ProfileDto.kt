@@ -3,6 +3,12 @@ package ua.nure.nomnomsave.repository.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class ProfileDataDto(
+    val message: String,
+    val user: ProfileDto
+)
+
+@Serializable
 data class ProfileDto(
     val id: String,
     val fullName: String,

@@ -12,4 +12,5 @@ interface UserRepository {
     fun getFavorites(): Flow<List<Favorite>>
     suspend fun deleteFromFavorites(favoriteId: String, establishmentId: String): Result<ResponseDto, DataError>
 
+
 }

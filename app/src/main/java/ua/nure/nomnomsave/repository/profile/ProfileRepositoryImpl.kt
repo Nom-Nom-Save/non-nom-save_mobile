@@ -18,6 +18,7 @@ import ua.nure.nomnomsave.db.data.entity.ProfileEntity
 import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
+import ua.nure.nomnomsave.repository.dto.ProfileDataDto
 import ua.nure.nomnomsave.repository.dto.ProfileDto
 import ua.nure.nomnomsave.repository.dto.mapper.toEntity
 import ua.nure.nomnomsave.repository.onSuccess
@@ -29,13 +30,13 @@ class ProfileRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor
     private val dbRepository: DbRepository,
     @DbDeliveryDispatcher private val dbDeliveryDispatcher: CloseableCoroutineDispatcher,
 ) : ProfileRepository {
-    override suspend fun loadMe(): Result<ProfileDto, DataError> = withContext(Dispatchers.IO) {
-        safeCall<ProfileDto> {
+    override suspend fun loadMe(): Result<ProfileDataDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<ProfileDataDto> {
             httpClient.get("users/me")
-        }.onSuccess { profileDto ->
+        }.onSuccess { data ->
             dbRepository.db.profileDao
                 .insert(
-                    profileDto.toEntity().copy(isOwned = true)
+                    data.user.toEntity().copy(isOwned = true)
                 )
         }
     }
@@ -44,7 +45,8 @@ class ProfileRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor
         fullName: String?,
         email: String?,
         notifyNearby: Boolean?,
-        notifyClosingSoon: Boolean?
+        notifyClosingSoon: Boolean?,
+        avatarUrl: String?
     ): Result<ProfileDto, DataError> = withContext(Dispatchers.IO) {
         safeCall<ProfileDto> {
             httpClient.patch("users/me") {
@@ -53,8 +55,8 @@ class ProfileRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor
                         fullName = fullName,
                         email = email,
                         notifyNearby = notifyNearby,
-                    notifyClosingSoon = notifyClosingSoon,
-//                        avatarUrl = avatarUrl
+                        notifyClosingSoon = notifyClosingSoon,
+                        avatarUrl = avatarUrl
                     )
                 )
             }
@@ -66,7 +68,7 @@ class ProfileRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getMe(): Flow<ProfileEntity> =
         dbRepository
-        .dbFlow
+            .dbFlow
             .flatMapLatest { db -> db.profileDao.getProfileEntity() }
             .filterNotNull()
             .flowOn(dbDeliveryDispatcher)

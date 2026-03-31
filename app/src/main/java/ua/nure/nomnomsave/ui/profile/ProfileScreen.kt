@@ -1,6 +1,7 @@
 package ua.nure.nomnomsave.ui.profile
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,11 +18,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +35,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -38,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.ui.compose.ChangeAvatarDialog
@@ -54,6 +61,7 @@ fun ProfileScreen(
     navController: NavController
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
     LaunchedEffect(key1 = Unit) {
         viewModel.event.collect {
             when (it) {
@@ -68,20 +76,33 @@ fun ProfileScreen(
     )
 }
 
+
+private val TAG by lazy { "ProfileScreen" }
 @Composable
 fun ProfileScreenContent(
     state: Profile.State,
     onAction: (Profile.Action) -> Unit
 ) {
-    var headerVisibility by remember { mutableStateOf(true) }
-    val listState = rememberLazyListState()
+    Log.d(TAG, "ProfileScreenContent: state: ${state.profile?.fullName}, ${state.profile?.email}")
 
-    LaunchedEffect(key1 = listState) {
+    var headerVisibility by remember { mutableStateOf(true) }
+    val columntState = rememberScrollState()
+
+//    LaunchedEffect(key1 = listState) {
+//        snapshotFlow {
+//            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+//        }.distinctUntilChanged()
+//            .collect {
+//                headerVisibility = !it
+//            }
+//    }
+
+    LaunchedEffect(key1 = columntState) {
         snapshotFlow {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+            columntState.value > 0
         }.distinctUntilChanged()
-            .collect {
-                headerVisibility = !it
+            .collect { isScrolling ->
+                headerVisibility = !isScrolling
             }
     }
 
@@ -101,157 +122,173 @@ fun ProfileScreenContent(
                         .size(130.dp)
                         .clip(shape = CircleShape)
                         .border(width = 1.dp, color = AppTheme.color.active, shape = CircleShape),
-                    model = state.profile?.avatarUrl,
+//                    model = state.profile?.avatarUrl,
+                    model = "https://avatarfiles.alphacoders.com/374/thumb-1920-374883.png",
                     contentDescription = null,
                     contentScale = ContentScale.Crop
                 )
-                Icon(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(shape = CircleShape)
-                        .background(color = AppTheme.color.active)
-                        .padding(2.dp)
-                        .clickable {
-                            onAction(Profile.Action.OnShowChangeAvatarDialog)
-                        },
-                    painter = painterResource(R.drawable.edit_icon),
-                    tint = AppTheme.color.background,
-                    contentDescription = null
-                )
+//                Icon(
+//                    modifier = Modifier
+//                        .size(36.dp)
+//                        .clip(shape = CircleShape)
+//                        .background(color = AppTheme.color.active)
+//                        .padding(2.dp)
+//                        .clickable {
+//                            onAction(Profile.Action.OnShowChangeAvatarDialog)
+//                        },
+//                    painter = painterResource(R.drawable.edit_icon),
+//                    tint = AppTheme.color.background,
+//                    contentDescription = null
+//                )
             }
         }
-        LazyColumn(
+
+        Column(
             modifier = Modifier
-                .fillMaxSize(),
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(space = AppTheme.dimension.normal)
+                .weight(1F)
+                .verticalScroll(state = columntState)
         ) {
-            item {
-                Column(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = stringResource(R.string.personalInformation),
+                    style = AppTheme.typography.small.copy(
+                        color = AppTheme.color.active
+                    ),
+                    modifier = Modifier
+                        .padding(
+                            top = AppTheme.dimension.normal,
+                            bottom = AppTheme.dimension.small
+                        )
+                        .padding(start = AppTheme.dimension.normal)
+                )
+                NNSInputField(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = AppTheme.dimension.normal),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = stringResource(R.string.personalInformation),
-                        style = AppTheme.typography.small.copy(
-                            color = AppTheme.color.active
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.small
                         ),
-                        modifier = Modifier
-                            .padding(
-                                top = AppTheme.dimension.normal,
-                                bottom = AppTheme.dimension.small
-                            )
-                            .padding(start = AppTheme.dimension.normal)
-                    )
-                    NNSInputField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AppTheme.dimension.normal,  vertical = AppTheme.dimension.small),
-                        label = stringResource(R.string.name),
-                        value = state.profile?.fullName ?: "",
-                        errorText = state.nameError
-                    ) {
+                    label = stringResource(R.string.name),
+                    value = state.profile?.fullName ?: "",
+                    errorText = state.nameError,
+                    onValueChange = {
                         onAction(Profile.Action.OnNameChange(name = it))
                     }
-                    NNSInputField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AppTheme.dimension.normal,  vertical = AppTheme.dimension.small),
-                        label = stringResource(R.string.email),
-                        value = state.profile?.email ?: "",
-                        errorText = state.emailError
-                    ) {
-                        onAction(Profile.Action.OnEmailChange(email = it))
-                    }
-                }
-            }
-            item {
-                Column(
+                )
+                NNSInputField(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = AppTheme.dimension.normal),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = stringResource(R.string.notification),
-                        style = AppTheme.typography.small.copy(
-                            color = AppTheme.color.active
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.small
                         ),
-                        modifier = Modifier
-                            .padding(
-                                top = AppTheme.dimension.normal,
-                                bottom = AppTheme.dimension.small
-                            )
-                            .padding(start = AppTheme.dimension.normal)
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AppTheme.dimension.normal,  vertical = AppTheme.dimension.small),
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1F)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.nearbyDeals),
-                                style = AppTheme.typography.regular
-                            )
-                            Text(
-                                text = stringResource(R.string.nearbyDealsDetails),
-                                style = AppTheme.typography.small.copy(
-                                    color = AppTheme.color.grey
-                                )
-                            )
-                        }
-                        NNSSwitch(
-                            checked = state.nearbyDealsNotifications,
-                            onCheckChange = {
-                                onAction(Profile.Action.OnNearbyDealsChange)
-                            }
-                        )
+                    label = stringResource(R.string.email),
+                    value = state.profile?.email ?: "",
+                    errorText = state.emailError,
+                    onValueChange = {
+                        onAction(Profile.Action.OnEmailChange(email = it))
                     }
-                    Row(
-                        modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = AppTheme.dimension.normal, vertical = AppTheme.dimension.small),) {
-                        Column(
-                            modifier = Modifier.weight(1F)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.closeTime),
-                                style = AppTheme.typography.regular
-                            )
-                            Text(
-                                text = stringResource(R.string.closeTimeDetails),
-                                style = AppTheme.typography.small.copy(
-                                    color = AppTheme.color.grey
-                                )
-                            )
-                        }
-                        NNSSwitch(
-                            checked = state.closedTimeNotifications,
-                            onCheckChange = {
-                                onAction(Profile.Action.OnCloseTimeChange)
-                            }
-                        )
-                    }
-                }
+                )
             }
-            item {
+
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = stringResource(R.string.notification),
+                    style = AppTheme.typography.small.copy(
+                        color = AppTheme.color.active
+                    ),
+                    modifier = Modifier
+                        .padding(
+                            top = AppTheme.dimension.normal,
+                            bottom = AppTheme.dimension.small
+                        )
+                        .padding(start = AppTheme.dimension.normal)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.small
+                        ),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1F)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.nearbyDeals),
+                            style = AppTheme.typography.regular
+                        )
+                        Text(
+                            text = stringResource(R.string.nearbyDealsDetails),
+                            style = AppTheme.typography.small.copy(
+                                color = AppTheme.color.grey
+                            )
+                        )
+                    }
+                    NNSSwitch(
+                        checked = state.nearbyDealsNotifications,
+                        onCheckChange = {
+                            onAction(Profile.Action.OnNearbyDealsChange)
+                        }
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.small
+                        ),) {
+                    Column(
+                        modifier = Modifier.weight(1F)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.closeTime),
+                            style = AppTheme.typography.regular
+                        )
+                        Text(
+                            text = stringResource(R.string.closeTimeDetails),
+                            style = AppTheme.typography.small.copy(
+                                color = AppTheme.color.grey
+                            )
+                        )
+                    }
+                    NNSSwitch(
+                        checked = state.closedTimeNotifications,
+                        onCheckChange = {
+                            onAction(Profile.Action.OnCloseTimeChange)
+                        }
+                    )
+                }
+
                 NNSButton(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = AppTheme.dimension.normal, vertical = AppTheme.dimension.large),
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.large
+                        ),
                     text = stringResource(R.string.saveChanges)
                 ) {
                     onAction(Profile.Action.OnSave)
                 }
-            }
-            item {
+
                 Spacer(
-                    modifier = Modifier.height(200.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp)
                 )
             }
         }

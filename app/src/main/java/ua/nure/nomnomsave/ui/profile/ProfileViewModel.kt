@@ -1,13 +1,17 @@
 package ua.nure.nomnomsave.ui.profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.R
@@ -23,26 +27,42 @@ class ProfileViewModel @Inject constructor(
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(Profile.State())
-    val state = _state.asStateFlow()
+    val state = _state.onStart {
+        loadMe()
+        observeProfile()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = Profile.State()
+    )
 
     private val _event = MutableSharedFlow<Profile.Event>()
     val event = _event.asSharedFlow()
 
     private var saveChangesJob: Job? = null
+    private var loadMeJob: Job? = null
+    private var observeProfileJob: Job? = null
 
     fun onAction(action: Profile.Action) = viewModelScope.launch {
         when (action) {
             Profile.Action.OnBack -> _event.emit(OnBack)
             is Profile.Action.OnNavigate -> _event.emit(OnNavigate(route = action.route))
 
-            is Profile.Action.OnAvatarChange -> _state.update { s ->
-                s.copy(
-                    profile = state.value.profile?.copy(
-                        avatarUrl = action.avatarUrl
-                    ),
-                    showChangeAvatarDialog = false
+            is Profile.Action.OnAvatarChange -> {
+                _state.update { s ->
+                    s.copy(
+                        profile = state.value.profile?.copy(
+                            avatarUrl = action.avatarUrl
+                        ),
+                        showChangeAvatarDialog = false
+                    )
+                }
+
+                saveChanges(
+                    avatarUrl = action.avatarUrl
                 )
             }
+
 
             Profile.Action.OnDismissChangeAvatarDialog -> {
                 _state.update { s ->
@@ -62,7 +82,7 @@ class ProfileViewModel @Inject constructor(
 
             is Profile.Action.OnEmailChange -> _state.update { s ->
                 s.copy(
-                    profile = state.value.profile?.copy(
+                    profile = s.profile?.copy(
                         email = action.email
                     )
                 )
@@ -70,9 +90,10 @@ class ProfileViewModel @Inject constructor(
 
             is Profile.Action.OnNameChange -> _state.update { s ->
                 s.copy(
-                    profile = state.value.profile?.copy(
+                    profile = s.profile?.copy(
                         fullName = action.name
                     )
+
                 )
             }
 
@@ -92,16 +113,18 @@ class ProfileViewModel @Inject constructor(
                 name = state.value.profile?.fullName,
                 email = state.value.profile?.email,
                 notifyNearby = state.value.profile?.notifyNearby,
-                notifyClosingSoon = state.value.profile?.notifyClosingSoon
+                notifyClosingSoon = state.value.profile?.notifyClosingSoon,
+                avatarUrl = state.value.profile?.avatarUrl
             )
         }
     }
 
     private fun saveChanges(
-        name: String?,
-        email: String?,
-        notifyNearby: Boolean?,
-        notifyClosingSoon: Boolean?,
+        name: String? = null,
+        email: String? = null,
+        notifyNearby: Boolean? = null,
+        notifyClosingSoon: Boolean? = null,
+        avatarUrl: String? = null
     ) {
         if (name?.isEmpty() == true) {
             _state.update { s ->
@@ -123,9 +146,29 @@ class ProfileViewModel @Inject constructor(
                 fullName = name,
                 email = email,
                 notifyNearby = notifyNearby,
-                notifyClosingSoon = notifyClosingSoon
+                notifyClosingSoon = notifyClosingSoon,
+                avatarUrl = avatarUrl
             ).onSuccess {}
         }
+    }
 
+    private fun loadMe() {
+        loadMeJob?.cancel()
+        loadMeJob = viewModelScope.launch {
+            profileRepository.loadMe()
+        }
+    }
+
+    private fun observeProfile() {
+        observeProfileJob?.cancel()
+        observeProfileJob = viewModelScope.launch(Dispatchers.IO) {
+            profileRepository.getMe().collect { profile ->
+                _state.update { s ->
+                    s.copy(
+                        profile = profile,
+                    )
+                }
+            }
+        }
     }
 }
