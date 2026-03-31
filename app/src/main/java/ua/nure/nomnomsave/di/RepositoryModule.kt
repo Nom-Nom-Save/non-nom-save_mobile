@@ -17,6 +17,8 @@ import ua.nure.nomnomsave.repository.auth.AuthRepository
 import ua.nure.nomnomsave.repository.auth.AuthRepositoryImpl
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepositoryImpl
+import ua.nure.nomnomsave.repository.menu.MenuRepository
+import ua.nure.nomnomsave.repository.menu.MenuRepositoryImpl
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.order.OrderRepositoryImpl
 import ua.nure.nomnomsave.repository.profile.ProfileRepository
@@ -113,6 +115,17 @@ object RepositoryModule {
         @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
         dbRepository: DbRepository,
     ): EstablishmentRepository = EstablishmentRepositoryImpl(
+        httpClient = httpClient,
+        dbDeliveryDispatcher = dbDeliveryDispatcher,
+        dbRepository = dbRepository
+    )
+
+    @Provides
+    fun provideMenuRepository(
+        httpClient: HttpClient,
+        @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
+        dbRepository: DbRepository,
+    ): MenuRepository = MenuRepositoryImpl(
         httpClient = httpClient,
         dbDeliveryDispatcher = dbDeliveryDispatcher,
         dbRepository = dbRepository
