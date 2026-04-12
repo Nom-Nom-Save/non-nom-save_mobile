@@ -39,4 +39,7 @@ sealed class Screen {
         @Serializable
         data object FavoritesList : Favorite()
     }
+
+    @Serializable
+    data object Maps: Screen()
 }

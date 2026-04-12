@@ -51,6 +51,7 @@ fun NavGraph(
         listGraph(navController = navController)
         favoriteGraph(navController = navController)
         profileGraph(navController = navController)
+        mapGraph(navController = navController)
     }
 
 }

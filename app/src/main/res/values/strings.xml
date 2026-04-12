@@ -84,4 +84,5 @@
     <string name="filter1star">1+</string>
     <string name="filter5star">5</string>
     <string name="filterTimeUntilClosing">Time Until Closing</string>
+    <string name="maps">Map</string>
 </resources>

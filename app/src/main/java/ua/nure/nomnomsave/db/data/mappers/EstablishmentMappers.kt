@@ -41,6 +41,3 @@ fun EstablishmentDetailPrivateDto.toEntity(): EstablishmentEntity =
         createdAt = this.createdAt,
         status = this.status,
     )
-
-
-

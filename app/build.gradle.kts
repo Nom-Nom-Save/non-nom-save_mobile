@@ -148,6 +148,8 @@ dependencies {
     implementation(libs.credentials.play)
     implementation(libs.googleid)
     implementation(libs.google.signin)
+    implementation(libs.google.maps)
+    implementation(libs.google.services.maps)
 
     implementation(libs.kizitonwose.calendar)
 

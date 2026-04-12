@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.0"
+agp = "9.1.0"
 kotlin = "2.2.21"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -12,7 +12,7 @@ hilt = "2.57.2"
 hiltCompiler = "2.57.2"
 hiltNavCompose = "1.3.0"
 navigationCompose = "2.9.5"
-devtoolsKsp = "2.2.21-2.0.4"
+devtoolsKsp = "2.3.2"
 runtimeCompose = "2.6.2"
 chucker = "4.2.0"
 room = "2.8.3"
@@ -24,6 +24,8 @@ googleid = "1.1.1"
 googleSignin = "20.7.0"
 kizitonwoseCalendar = "2.9.0"
 zxing = "3.5.1"
+google-maps = "8.3.0"
+google-services-maps = "20.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -67,6 +69,8 @@ credentials = {group = "androidx.credentials", name = "credentials", version.ref
 credentials-play = {group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials"}
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 google-signin = {group = "com.google.android.gms", name = "play-services-auth", version.ref="googleSignin"}
+google-maps = {group = "com.google.maps.android", name = "maps-compose", version.ref="google-maps"}
+google-services-maps = {group = "com.google.android.gms", name = "play-services-maps", version.ref="google-services-maps"}
 kizitonwose-calendar = { group = "com.kizitonwose.calendar", name = "compose", version.ref = "kizitonwoseCalendar"}
 zxing = {group = "com.google.zxing", name = "core", version.ref = "zxing"}
 

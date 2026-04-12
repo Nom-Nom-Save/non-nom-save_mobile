@@ -8,4 +8,5 @@ sealed class NestedGraph {
     @Serializable data object Cart : NestedGraph()
     @Serializable data object ListView : NestedGraph()
     @Serializable data object Favorite : NestedGraph()
+    @Serializable data object Maps : NestedGraph()
 }

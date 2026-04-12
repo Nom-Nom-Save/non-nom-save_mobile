@@ -18,9 +18,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.UiMode
 import ua.nure.nomnomsave.R
-import ua.nure.nomnomsave.ui.auth.register.Register
 import ua.nure.nomnomsave.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

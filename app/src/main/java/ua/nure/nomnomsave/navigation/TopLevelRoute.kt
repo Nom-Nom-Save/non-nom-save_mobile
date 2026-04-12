@@ -37,5 +37,11 @@ val topLevelRoutes = listOf<TopLevelRoute<NestedGraph>>(
         selectedIcon = R.drawable.profile_active,
         unselectedIcon = R.drawable.profile_passive
     ),
+    TopLevelRoute(
+        route = NestedGraph.Maps,
+        title = R.string.maps,
+        selectedIcon = R.drawable.map_active,
+        unselectedIcon = R.drawable.map_passive
+    ),
 
 )
