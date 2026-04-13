@@ -20,11 +20,12 @@ import ua.nure.nomnomsave.ui.cart.Cart.Event.*
 import javax.inject.Inject
 
 @HiltViewModel
-class CartViewModel  @Inject constructor(
+class CartViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
     private val resourceRepository: ResourceRepository,
-): ViewModel() {
+) : ViewModel() {
     private val TAG by lazy { CartViewModel::class.simpleName }
+
     val _state = MutableStateFlow(Cart.State())
     val state = _state.onStart {
         loadOrders()
@@ -42,15 +43,16 @@ class CartViewModel  @Inject constructor(
     private var observeOrdersJob: Job? = null
 
     fun onAction(action: Cart.Action) = viewModelScope.launch {
-        when(action) {
+        when (action) {
             Cart.Action.OnBack -> _event.emit(OnBack)
             is Cart.Action.OnNavigate -> _event.emit(OnNavigate(route = action.route))
+
             is Cart.Action.OnQueryChanged -> {
-                _state.update { s ->
-                    s.copy(
-                        query = action.query
-                    )
-                }
+                _state.update { s -> s.copy(query = action.query) }
+            }
+
+            is Cart.Action.OnTabSelected -> {
+                _state.update { s -> s.copy(selectedTab = action.tab) }
             }
 
             is Cart.Action.OnQR -> {
@@ -68,21 +70,32 @@ class CartViewModel  @Inject constructor(
                     s.copy(
                         showQRCodeDialog = false,
                         qrCodeDialogTitle = null,
-                        qrBitmap = null
+                        qrBitmap = null,
                     )
                 }
             }
 
-            is Cart.Action.OnDeleteOrder -> {
+            is Cart.Action.OnDeleteOrder -> cancelOrder(action.id)
+        }
+    }
 
+    private fun cancelOrder(orderId: String) {
+        viewModelScope.launch {
+            orderRepository.cancelOrder(orderId).let { result ->
+                when (result) {
+                    is ua.nure.nomnomsave.repository.Result.Success -> loadOrders()
+                    is ua.nure.nomnomsave.repository.Result.Error -> {
+                        Log.e(TAG, "Failed to cancel order: ${result.error}")
+                    }
+                }
             }
         }
     }
 
-    private fun loadOrders() {
+    private fun loadOrders(page: Int = 1, limit: Int = 10) {
         loadOrdersJob?.cancel()
         loadOrdersJob = viewModelScope.launch {
-            orderRepository.orders()
+            orderRepository.orders(page, limit)
         }
     }
 
@@ -90,16 +103,9 @@ class CartViewModel  @Inject constructor(
         observeOrdersJob?.cancel()
         observeOrdersJob = viewModelScope.launch {
             orderRepository.getOrders().collect { list ->
-                Log.d(TAG, "observeOrders: ${list.firstOrNull()?.orderEntity?.id} -> ${list.firstOrNull()?.details?.firstOrNull()?.itemName}")
-                _state.update { s ->
-                    s.copy(
-                        orders = list
-                    )
-                }
+                Log.d(TAG, "observeOrders: ${list.firstOrNull()?.orderEntity?.id}")
+                _state.update { s -> s.copy(orders = list) }
             }
         }
-
     }
-
-
 }

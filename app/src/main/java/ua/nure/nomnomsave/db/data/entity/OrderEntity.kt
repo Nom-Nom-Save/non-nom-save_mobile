@@ -22,7 +22,7 @@ data class OrderEntity(
     val establishmentAddress: String,
     val establishmentLogo: String,
     val establishmentBanner: String? = null,
-    val allergens: Boolean = false,
+    val allergens: List<String> = emptyList(),
     val totalOrderWeight: Int
 )
 

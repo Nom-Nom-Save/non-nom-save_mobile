@@ -10,7 +10,16 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 data class OrdersResponseDto(
-    val orders: List<OrderDto>
+    val orders: List<OrderDto>,
+    val meta: PaginationMeta? = null
+)
+
+@Serializable
+data class PaginationMeta(
+    val total: Int,
+    val page: Int,
+    val limit: Int,
+    val totalPages: Int
 )
 
 @Serializable
@@ -43,6 +52,7 @@ data class OrderDetailDto(
     val discountPrice: Double,
     val itemName: String,
     val itemType: String,
+    val itemPicture: String? = null,
     val weight: Int,
     val minWeight: Int? = null,
     val maxWeight: Int? = null
@@ -52,7 +62,8 @@ data class OrderDetailDto(
 enum class OrderStatus {
     Reserved,
     Completed,
-    Cancelled
+    Cancelled,
+    Expired
 }
 
 object OrderStatusSerializer : KSerializer<OrderStatus> {
@@ -68,6 +79,7 @@ object OrderStatusSerializer : KSerializer<OrderStatus> {
                 OrderStatus.Reserved -> "Reserved"
                 OrderStatus.Completed -> "Completed"
                 OrderStatus.Cancelled -> "Cancelled"
+                OrderStatus.Expired -> "Expired"
             }
         )
     }
@@ -77,6 +89,7 @@ object OrderStatusSerializer : KSerializer<OrderStatus> {
             "Reserved" -> OrderStatus.Reserved
             "Completed" -> OrderStatus.Completed
             "Cancelled" -> OrderStatus.Cancelled
+            "Expired" -> OrderStatus.Expired
             else -> throw IllegalArgumentException("OrderStatus $result Not found")
         }
 }
