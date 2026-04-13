@@ -33,9 +33,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import ua.nure.nomnomsave.App
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.ui.theme.AppTheme
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun NNSMenuCard(
@@ -109,7 +111,7 @@ fun NNSMenuCard(
                         vertical = 2.dp
                     )
                 ,
-                text = String.format(stringResource(R.string.collectTil), collectTill),
+                text = String.format(stringResource(R.string.collectTil), formatTime(collectTill)),
                 style = AppTheme.typography.regular.copy(
                     color = AppTheme.color.grey
                 )
@@ -156,7 +158,6 @@ fun NNSMenuCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(30.dp))
-                        // .clickable(onClick = onQR)
                         .background(color = AppTheme.color.active)
                         .padding(
                             horizontal = AppTheme.dimension.normal,
@@ -188,6 +189,25 @@ fun NNSMenuCard(
     }
 }
 
+private fun formatTime(timeString: String): String {
+    if (timeString.length <= 5) return timeString
+
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        parser.timeZone = TimeZone.getTimeZone("UTC")
+        val parsedDate = parser.parse(timeString)
+
+        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+        parsedDate?.let { formatter.format(it) } ?: timeString
+    } catch (e: Exception) {
+        if (timeString.contains("T")) {
+            timeString.substringAfter("T").take(5)
+        } else {
+            timeString
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun NSSMenuCardDisplayPreview(modifier: Modifier = Modifier) {
@@ -199,7 +219,7 @@ fun NSSMenuCardDisplayPreview(modifier: Modifier = Modifier) {
                 modifier = modifier,
                 title = "Pastry Surprise Box",
                 url = "",
-                collectTill = "7 PM",
+                collectTill = "19:00",
                 allergens = false,
                 grams = 200,
                 picture = ""
@@ -219,12 +239,11 @@ fun NSSMenuCardDisplayDarkPreview(modifier: Modifier = Modifier) {
                 modifier = modifier,
                 title = "Pastry Surprise Box",
                 url = "",
-                collectTill = "7 PM",
+                collectTill = "19:00",
                 allergens = true,
                 grams = 200,
                 picture = ""
             )
-
         }
     }
 }
