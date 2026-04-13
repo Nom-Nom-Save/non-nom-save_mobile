@@ -96,7 +96,7 @@ class ReviewRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
             }.onSuccess { response ->
                 response.review?.let { newReview ->
                     dbRepository.db.reviewDao.insertReviews(
-                        listOf(newReview.toEntity(establishmentId, isMyReview = true))
+                        listOf(newReview.toEntity(establishmentId, isMyReview = true, forcedIsEditable = true))
                     )
                 }
             }
