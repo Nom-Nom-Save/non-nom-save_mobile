@@ -10,10 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ua.nure.nomnomsave.db.data.mappers.toEntity
-import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
-import ua.nure.nomnomsave.repository.map
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,6 +25,19 @@ class MapsViewModel @Inject constructor(
     val event = _event.asSharedFlow()
     private var loadEstablishmentsJob: Job? = null
 
+    fun onAction(action: Maps.Action) = viewModelScope.launch {
+        when(action) {
+            Maps.Action.OnBack -> _event.emit(Maps.Event.OnBack)
+            is Maps.Action.OnNavigate -> _event.emit(Maps.Event.OnNavigate(route = action.route))
+            is Maps.Action.OnEstablishmentSelected -> {
+                _state.update { s ->
+                    s.copy(
+                        selectedEstablishment = action.establishment
+                    )
+                }
+            }
+        }
+    }
 
     private fun loadEstablishments() {
         loadEstablishmentsJob?.cancel()

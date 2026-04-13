@@ -150,6 +150,7 @@ dependencies {
     implementation(libs.google.signin)
     implementation(libs.google.maps)
     implementation(libs.google.services.maps)
+    implementation(libs.google.services.location)
 
     implementation(libs.kizitonwose.calendar)
 

@@ -14,9 +14,11 @@ object Maps {
     sealed interface Action {
         data object OnBack : Action
         data class OnNavigate(val route: Screen) : Action
+        data class OnEstablishmentSelected(val establishment: EstablishmentEntity?) : Action
     }
 
     data class State(
         val establishments: List<EstablishmentEntity>? = emptyList(),
+        val selectedEstablishment: EstablishmentEntity? = null,
     )
 }
