@@ -92,17 +92,6 @@ private fun ListScreenContent(
         ) {
             item {
                 SortChip(
-                    label = stringResource(R.string.price),
-                    ascending = state.selectedSort != List.SortOption.PRICE_DESC,
-                    onClick = {
-                        val next = if (state.selectedSort == List.SortOption.PRICE_ASC)
-                            List.SortOption.PRICE_DESC else List.SortOption.PRICE_ASC
-                        onAction(List.Action.OnSortChange(next))
-                    }
-                )
-            }
-            item {
-                SortChip(
                     label = stringResource(R.string.distance),
                     ascending = state.selectedSort != List.SortOption.DISTANCE_DESC,
                     onClick = {

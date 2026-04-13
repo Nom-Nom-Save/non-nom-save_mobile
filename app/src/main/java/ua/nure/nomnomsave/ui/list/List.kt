@@ -33,7 +33,7 @@ object List {
         val favorites: List<Favorite>? = null,
         // Active filters
         val maxDistanceKm: Float = 8f,
-        val minRating: Float = 1f,
+        val minRating: Float = 0f,
         val selectedTimeFilter: TimeFilterOption? = null,
         val selectedSort: SortOption = SortOption.NONE,
         // Pending filters (inside bottom sheet, before Apply)

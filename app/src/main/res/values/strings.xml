@@ -85,4 +85,12 @@
     <string name="filter5star">5</string>
     <string name="filterTimeUntilClosing">Time Until Closing</string>
     <string name="maps">Map</string>
+    <string name="tabOrder">Order</string>
+    <string name="tabMyOrders">My Orders</string>
+    <string name="upcomingOrders">Upcoming Orders</string>
+    <string name="completedOrders">Completed Orders</string>
+    <string name="cancelledOrExpiredOrders">Cancelled or Expired Orders (%1$d)</string>
+    <string name="noUpcomingOrders">No Upcoming Orders</string>
+    <string name="noCompletedOrders">No Completed Orders</string>
+    <string name="noCancelledOrders">No Cancelled or Expired Orders</string>
 </resources>

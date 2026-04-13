@@ -14,6 +14,7 @@ data class OrderDetailsEntity(
     val discountPrice: Double,
     val itemName: String,
     val itemType: String,
+    val itemPicture: String? = null,
     val weight: Int,
     val minWeight: Int? = null,
     val maxWeight: Int? = null

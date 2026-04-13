@@ -26,7 +26,7 @@ import ua.nure.nomnomsave.db.data.entity.MenuEntity
         EstablishmentEntity::class,
         MenuEntity::class
     ],
-    version = 4
+    version = 5
 )
 
 @TypeConverters(DbConverters::class)
