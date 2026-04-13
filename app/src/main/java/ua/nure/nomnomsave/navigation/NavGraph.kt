@@ -10,6 +10,7 @@ import ua.nure.nomnomsave.ui.auth.forgotpassword.ForgotPasswordScreen
 import ua.nure.nomnomsave.ui.auth.login.LoginScreen
 import ua.nure.nomnomsave.ui.auth.register.RegistrationScreen
 import ua.nure.nomnomsave.ui.establishmentDetails.EstablishmentDetailsScreen
+import ua.nure.nomnomsave.ui.premium.PremiumScreen
 import ua.nure.nomnomsave.ui.profile.ProfileScreen
 
 @Composable
@@ -52,6 +53,13 @@ fun NavGraph(
         favoriteGraph(navController = navController)
         profileGraph(navController = navController)
         mapGraph(navController = navController)
+
+        composable<Screen.Premium> {
+            PremiumScreen(
+                viewModel = hiltViewModel(),
+                navController = navController
+            )
+        }
     }
 
 }

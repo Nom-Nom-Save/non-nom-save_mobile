@@ -285,6 +285,18 @@ fun ProfileScreenContent(
                     onAction(Profile.Action.OnSave)
                 }
 
+                NNSButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.large
+                        ),
+                    text = stringResource(R.string.unlockPremium)
+                ) {
+                    onAction(Profile.Action.OnUnlockPremium)
+                }
+
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
