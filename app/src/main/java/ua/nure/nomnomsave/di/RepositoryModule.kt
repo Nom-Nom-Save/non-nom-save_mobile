@@ -25,6 +25,8 @@ import ua.nure.nomnomsave.repository.profile.ProfileRepository
 import ua.nure.nomnomsave.repository.profile.ProfileRepositoryImpl
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepositoryImpl
+import ua.nure.nomnomsave.repository.review.ReviewRepository
+import ua.nure.nomnomsave.repository.review.ReviewRepositoryImpl
 import ua.nure.nomnomsave.repository.token.TokenRepository
 import ua.nure.nomnomsave.repository.token.TokenRepositoryImpl
 import ua.nure.nomnomsave.repository.user.UserRepository
@@ -126,6 +128,17 @@ object RepositoryModule {
         @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
         dbRepository: DbRepository,
     ): MenuRepository = MenuRepositoryImpl(
+        httpClient = httpClient,
+        dbDeliveryDispatcher = dbDeliveryDispatcher,
+        dbRepository = dbRepository
+    )
+
+    @Provides
+    fun provideReviewRepository(
+        httpClient: HttpClient,
+        @DbDeliveryDispatcher dbDeliveryDispatcher: CloseableCoroutineDispatcher,
+        dbRepository: DbRepository,
+    ): ReviewRepository = ReviewRepositoryImpl(
         httpClient = httpClient,
         dbDeliveryDispatcher = dbDeliveryDispatcher,
         dbRepository = dbRepository

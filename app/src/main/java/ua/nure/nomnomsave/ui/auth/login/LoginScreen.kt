@@ -1,6 +1,8 @@
 package ua.nure.nomnomsave.ui.auth.login
 
+import android.content.ContentValues.TAG
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,16 +21,31 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.PasswordCredential
+import androidx.credentials.PublicKeyCredential
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.App
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.navigation.Screen
@@ -37,6 +54,7 @@ import ua.nure.nomnomsave.ui.compose.NNSInputField
 import ua.nure.nomnomsave.ui.compose.NNSScreen
 import ua.nure.nomnomsave.ui.compose.NNSTitle
 import ua.nure.nomnomsave.ui.theme.AppTheme
+import ua.nure.nomnomsave.config.WEB_CLIENT_ID
 
 @Composable
 fun LoginScreen(
@@ -65,6 +83,9 @@ private fun LoginScreenContent(
     state: Login.State,
     onAction: (Login.Action) -> Unit
 ) {
+    val context = LocalContext.current
+    val credentialManager = remember { CredentialManager.create(context = context) }
+    val coroutineScope = rememberCoroutineScope()
     NNSScreen(
         modifier = Modifier.padding(horizontal = AppTheme.dimension.normal),
         verticalArrangement = Arrangement.SpaceBetween
@@ -172,7 +193,43 @@ private fun LoginScreenContent(
             icon = R.drawable.google,
             color = Color.White
         ) {
-            //onAction(Login.Action.OnGoogleLogIn())
+            coroutineScope.launch {
+                try {
+                    val googleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(WEB_CLIENT_ID)
+                        .build()
+
+                    val request = GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
+
+                    val result: GetCredentialResponse = credentialManager.getCredential(
+                        request = request,
+                        context = context
+                    )
+
+                    val credential = result.credential
+
+                    if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+
+                        Log.d(TAG, "Google idToken отримано!")
+
+                        onAction(
+                            Login.Action.OnGoogleLogIn(
+                                idToken = googleIdTokenCredential.idToken,
+                                email = googleIdTokenCredential.id
+                            )
+                        )
+                    } else {
+                        Log.e(TAG, "Unexpected type of credential")
+                    }
+
+                } catch (ex: Exception) {
+                    Log.e("GOOGLE_AUTH_ERROR", "Помилка при виклику Google: ${ex.message}", ex)
+                }
+            }
         }
 
         Row(

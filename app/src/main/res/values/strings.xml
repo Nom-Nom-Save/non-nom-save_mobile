@@ -85,4 +85,12 @@
     <string name="filter5star">5</string>
     <string name="filterTimeUntilClosing">Time Until Closing</string>
     <string name="maps">Map</string>
+    <string name="noReviews">No reviews yet. Be the first!</string>
+    <string name="writeReview">Write a review</string>
+    <string name="editReview">Edit review</string>
+    <string name="oneReview">You are allowed to write only one review per day</string>
+    <string name="closed">Closed</string>
+    <string name="reserve">Reserve Now</string>
+    <string name="submitReview">Submit review</string>
+    <string name="shareThoughts">Share your thoughts about this establishment...</string>
 </resources>

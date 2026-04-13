@@ -12,6 +12,8 @@ import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.auth.dto.ForgotPasswordRequest
+import ua.nure.nomnomsave.repository.auth.dto.GoogleLogInRequest
+import ua.nure.nomnomsave.repository.auth.dto.GoogleLoginDto
 import ua.nure.nomnomsave.repository.auth.dto.RegisterRequest
 import ua.nure.nomnomsave.repository.auth.dto.ResetPasswordRequest
 import ua.nure.nomnomsave.repository.auth.dto.LoginRequest
@@ -21,6 +23,7 @@ import ua.nure.nomnomsave.repository.dto.ResponseDto
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.safeCall
 import ua.nure.nomnomsave.repository.token.TokenRepository
+import kotlin.onSuccess
 
 class AuthRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
     private val httpClient: HttpClient,
@@ -112,6 +115,25 @@ class AuthRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
             }
         }.onSuccess {
             tokenRepository.setToken(newToken = it.accessToken)
+            tokenRepository.setUserName(newUserName = email)
+        }
+    }
+
+    override suspend fun googleLogIn(
+        token: String,
+        email: String
+    ): Result<GoogleLoginDto, DataError> = withContext(Dispatchers.IO) {
+        safeCall<GoogleLoginDto> {
+            httpClient.post("auth/google") {
+                setBody(
+                    GoogleLogInRequest(
+                        token = token,
+                        email = email
+                    )
+                )
+            }
+        }.onSuccess {
+            tokenRepository.setToken(newToken = it.token)
             tokenRepository.setUserName(newUserName = email)
         }
     }
