@@ -16,13 +16,15 @@ import ua.nure.nomnomsave.navigation.Screen
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
 import ua.nure.nomnomsave.repository.menu.MenuRepository
 import ua.nure.nomnomsave.repository.onSuccess
+import ua.nure.nomnomsave.repository.review.ReviewRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class EstablishmentDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: EstablishmentRepository,
-    private val menuRepository: MenuRepository
+    private val menuRepository: MenuRepository,
+    private val reviewRepository: ReviewRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EstablishmentDetails.State())
@@ -47,6 +49,12 @@ class EstablishmentDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            reviewRepository.getLocalReviews(id).collect { reviewList ->
+                _state.update { it.copy(reviews = reviewList) }
+            }
+        }
+
+        viewModelScope.launch {
             repository.getEstablishmentById(id).onSuccess { dto ->
                 _state.update { it.copy(
                     establishment = dto.toEntity(),
@@ -58,6 +66,10 @@ class EstablishmentDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             menuRepository.fetchMenu(id)
         }
+
+        viewModelScope.launch {
+            reviewRepository.fetchReviews(id)
+        }
     }
 
     fun onAction(action: EstablishmentDetails.Action) = viewModelScope.launch {
@@ -67,6 +79,36 @@ class EstablishmentDetailsViewModel @Inject constructor(
             }
             is EstablishmentDetails.Action.OnNavigate -> {
                 _event.emit(EstablishmentDetails.Event.OnNavigate(route = action.route))
+            }
+            is EstablishmentDetails.Action.OnOpenReviewSheet -> {
+                _state.update { it.copy(showReviewSheet = true, editingReview = action.review) }
+            }
+            EstablishmentDetails.Action.OnCloseReviewSheet -> {
+                _state.update { it.copy(showReviewSheet = false, editingReview = null) }
+            }
+            is EstablishmentDetails.Action.OnSubmitReview -> {
+                _state.update { it.copy(showReviewSheet = false) }
+
+                val estId = state.value.establishment?.id ?: return@launch
+                val editingReview = state.value.editingReview
+
+                if (editingReview != null) {
+                    reviewRepository.updateReview(
+                        reviewId = editingReview.id,
+                        rating = action.rating,
+                        comment = action.comment
+                    )
+                } else {
+                    reviewRepository.createReview(
+                        establishmentId = estId,
+                        rating = action.rating,
+                        comment = action.comment
+                    )
+                }
+                _state.update { it.copy(editingReview = null) }
+            }
+            is EstablishmentDetails.Action.OnDeleteReview -> {
+                reviewRepository.deleteReview(action.reviewId)
             }
         }
     }

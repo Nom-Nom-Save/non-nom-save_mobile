@@ -10,12 +10,14 @@ import ua.nure.nomnomsave.db.data.dao.FavoriteDao
 import ua.nure.nomnomsave.db.data.dao.OrderDao
 import ua.nure.nomnomsave.db.data.dao.OrderDetailsDao
 import ua.nure.nomnomsave.db.data.dao.ProfileDao
+import ua.nure.nomnomsave.db.data.dao.ReviewDao
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.db.data.entity.FavoriteEntity
 import ua.nure.nomnomsave.db.data.entity.OrderDetailsEntity
 import ua.nure.nomnomsave.db.data.entity.OrderEntity
 import ua.nure.nomnomsave.db.data.entity.ProfileEntity
 import ua.nure.nomnomsave.db.data.entity.MenuEntity
+import ua.nure.nomnomsave.db.data.entity.ReviewEntity
 
 @Database(
     entities = [
@@ -24,9 +26,10 @@ import ua.nure.nomnomsave.db.data.entity.MenuEntity
         OrderDetailsEntity::class,
         FavoriteEntity::class,
         EstablishmentEntity::class,
-        MenuEntity::class
+        MenuEntity::class,
+        ReviewEntity::class
     ],
-    version = 5
+    version = 6
 )
 
 @TypeConverters(DbConverters::class)
@@ -37,4 +40,5 @@ abstract class AppDb : RoomDatabase() {
     abstract val favoriteDao: FavoriteDao
     abstract val establishedDao: EstablishedDao
     abstract val menuDao: MenuDao
+    abstract val reviewDao: ReviewDao
 }

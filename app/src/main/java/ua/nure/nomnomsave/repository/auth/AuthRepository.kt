@@ -13,7 +13,7 @@ interface AuthRepository {
     suspend fun verifyResetCode(email: String, code: String): Result<ResponseDto, DataError>
     suspend fun resetPassword(email: String, newPassword: String): Result<ResponseDto, DataError>
 
-    //suspend fun googleLogIn(token: String, email: String): Result<GoogleLoginDto, DataError>
+    suspend fun googleLogIn(token: String, email: String): Result<GoogleLoginDto, DataError>
 
     suspend fun login(email: String, password: String): Result<LoginDto, DataError>
 }

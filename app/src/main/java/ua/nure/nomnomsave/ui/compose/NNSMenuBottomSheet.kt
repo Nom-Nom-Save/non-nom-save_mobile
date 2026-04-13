@@ -40,6 +40,30 @@ import ua.nure.nomnomsave.db.data.entity.ItemDetailsEntity
 import ua.nure.nomnomsave.db.data.entity.MenuEntity
 import ua.nure.nomnomsave.db.data.entity.PriceDataEntity
 import ua.nure.nomnomsave.ui.theme.AppTheme
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
+
+// Додана функція для надійного форматування часу
+private fun formatTime(timeString: String?): String {
+    if (timeString.isNullOrBlank() || timeString == "N/A") return "N/A"
+    if (timeString.length <= 5) return timeString
+
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        parser.timeZone = TimeZone.getTimeZone("UTC")
+        val parsedDate = parser.parse(timeString)
+
+        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+        parsedDate?.let { formatter.format(it) } ?: timeString
+    } catch (e: Exception) {
+        if (timeString.contains("T")) {
+            timeString.substringAfter("T").take(5)
+        } else {
+            timeString
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,7 +133,7 @@ fun NNSMenuBottomSheet(
                 style = AppTheme.typography.large.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                text = String.format(stringResource(R.string.collectTil), menuItem.priceData?.endTime ?: "N/A"),
+                text = String.format(stringResource(R.string.collectTil), formatTime(menuItem.priceData?.endTime)),
                 style = AppTheme.typography.regular
             )
 
@@ -187,7 +211,7 @@ fun NNSMenuBottomSheet(
 
             NNSButton(
                 modifier = Modifier.fillMaxWidth(),
-                text = "Reserve Now",
+                text = stringResource(R.string.reserve),
                 onClick = {
                     onReserve(quantity)
                     onDismiss()
