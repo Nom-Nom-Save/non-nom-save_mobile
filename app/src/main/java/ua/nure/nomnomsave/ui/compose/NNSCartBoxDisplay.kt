@@ -45,7 +45,7 @@ fun NNSCartBoxDisplay(
     title: String,
     url: String,
     collectTill: LocalDateTime,
-    allergens: Boolean = false,
+    allergens: List<String> = emptyList(),
     address: String,
     grams: Int,
     onQR: () -> Unit = {},
@@ -127,7 +127,7 @@ fun NNSCartBoxDisplay(
                     color = AppTheme.color.grey
                 )
             )
-            if (allergens) {
+            if (allergens.isNotEmpty()) {
                 Text(
                     modifier = Modifier
                         .padding(start = AppTheme.dimension.extraSmall)
@@ -242,7 +242,7 @@ fun NSSCartBoxDisplayPreview(modifier: Modifier = Modifier) {
                 title = "Pastry Surprise Box",
                 url = "",
                 collectTill = LocalDateTime.now(),
-                allergens = false,
+                allergens = emptyList(),
                 address = "Greyson st. 20",
                 grams = 200,
             )
@@ -262,7 +262,7 @@ fun NSSCartBoxDisplayDarkPreview(modifier: Modifier = Modifier) {
                 title = "Pastry Surprise Box",
                 url = "",
                 collectTill = LocalDateTime.now(),
-                allergens = true,
+                allergens = listOf("Peanuts", "Gluten"),
                 address = "Greyson st. 20",
                 grams = 200,
             )

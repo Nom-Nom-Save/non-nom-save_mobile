@@ -14,6 +14,7 @@ fun OrderDetailDto.toEntity() =
         discountPrice = discountPrice,
         itemName = itemName,
         itemType = itemType,
+        itemPicture = itemPicture,
         weight = weight,
         minWeight = minWeight,
         maxWeight = maxWeight

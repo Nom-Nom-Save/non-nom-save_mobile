@@ -86,7 +86,20 @@ fun EstablishmentCard(
             }
 
             Text(
-                text = entity.workingHours.orEmpty(),
+                text = entity.workingHours?.let { hours ->
+                    try {
+                        val firstDay = hours.split("|").firstOrNull() ?: "-"
+                        val parts = firstDay.split("=")
+                        if (parts.size == 2) {
+                            val time = parts[1].trim()
+                            time
+                        } else {
+                            firstDay
+                        }
+                    } catch (e: Exception) {
+                        hours
+                    }
+                } ?: "-",
                 style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
                 maxLines = 1,
             )
@@ -159,7 +172,7 @@ private fun EstablishmentCardPreview() {
                 entity = EstablishmentEntity(
                     id = "1",
                     name = "The golden bakery",
-                    workingHours = "closes in 1 hour",
+                    workingHours = "mon=09:00-18:00|tue=09:00-18:00|wed=09:00-18:00|thu=09:00-18:00|fri=09:00-18:00|sat=10:00-16:00|sun=closed",
                     adress = "Street",
                     rating = "5.0",
                 ),

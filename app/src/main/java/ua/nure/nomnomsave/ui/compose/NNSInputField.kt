@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -78,7 +79,7 @@ fun NNSInputField(
                     painter = painterResource(if (isVisible) R.drawable.show else R.drawable.hide),
                     contentDescription = null
                 )
-            }
+            },
         )
     }
     else {

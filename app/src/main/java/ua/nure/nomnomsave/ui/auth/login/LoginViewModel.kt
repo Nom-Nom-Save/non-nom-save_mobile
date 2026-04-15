@@ -36,6 +36,7 @@ class LoginViewModel @Inject constructor(
     val event = _event.asSharedFlow()
 
     private var loginJob: Job? = null
+    private var googleLogInJob: Job? = null
 
     fun onAction(action: Login.Action) = viewModelScope.launch {
         when(action) {
@@ -81,6 +82,19 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun onGoogleLogin(idToken: String, email: String) {
-
+        googleLogInJob?.cancel()
+        googleLogInJob = viewModelScope.launch {
+            authRepository.googleLogIn(
+                token = idToken,
+                email = email
+            ).onSuccess {
+                _event.emit(
+                    Login.Event.OnNavigate(route = Screen.List.ListView)
+                )
+            }.onError { error ->
+                _state.update { it.copy(loginError = resourceRepository.getStringByResource(R.string.noMatches)) }
+                Log.e(TAG, "Google Login error: $error")
+            }
+        }
     }
 }

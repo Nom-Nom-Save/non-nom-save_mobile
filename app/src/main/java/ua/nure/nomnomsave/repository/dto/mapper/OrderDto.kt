@@ -18,6 +18,6 @@ fun OrderDto.toEntity() =
         establishmentAddress = establishmentAddress,
         establishmentLogo = establishmentLogo,
         establishmentBanner = establishmentBanner,
-        allergens = allergens.isNotEmpty(),
+        allergens = allergens,
         totalOrderWeight = totalOrderWeight
     )

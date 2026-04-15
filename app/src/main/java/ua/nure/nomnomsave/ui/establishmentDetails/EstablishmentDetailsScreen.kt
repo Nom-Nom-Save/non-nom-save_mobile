@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -45,8 +46,11 @@ import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.db.data.entity.ItemDetailsEntity
 import ua.nure.nomnomsave.db.data.entity.MenuEntity
 import ua.nure.nomnomsave.db.data.entity.PriceDataEntity
+import ua.nure.nomnomsave.ui.compose.NNSButton
 import ua.nure.nomnomsave.ui.compose.NNSMenuBottomSheet
 import ua.nure.nomnomsave.ui.compose.NNSMenuCard
+import ua.nure.nomnomsave.ui.compose.NNSReviewBottomSheet
+import ua.nure.nomnomsave.ui.compose.NNSReviewCard
 import ua.nure.nomnomsave.ui.compose.NNSScreen
 import ua.nure.nomnomsave.ui.theme.AppTheme
 
@@ -85,6 +89,9 @@ fun EstablishmentDetailsScreen(
     var selectedTab by remember { mutableStateOf(DetailsTab.DETAILS) }
     var selectedMenuItem by remember { mutableStateOf<MenuEntity?>(null) }
 
+    val myReview = remember(state.reviews) { state.reviews.find { it.isMyReview } }
+    val isLimitReached = myReview != null && myReview.isEditable
+
     NNSScreen {
         Box(
             modifier = Modifier
@@ -116,6 +123,7 @@ fun EstablishmentDetailsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
+                    .padding(bottom = if (selectedTab == DetailsTab.REVIEWS) 120.dp else 0.dp)
             ) {
                 Spacer(modifier = Modifier.height(280.dp))
 
@@ -134,7 +142,7 @@ fun EstablishmentDetailsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = state.establishment?.name ?: "Unknown name",
+                                text = state.establishment?.name ?: "-",
                                 style = AppTheme.typography.large
                             )
                         }
@@ -184,47 +192,75 @@ fun EstablishmentDetailsScreen(
                             InfoSection(
                                 modifier = Modifier.padding(top = AppTheme.dimension.large),
                                 title = stringResource(R.string.openingHours),
-                                content = state.establishment?.workingHours ?: "Not specified"
+                                content = formatWorkingHours(
+                                    rawHours = state.establishment?.workingHours,
+                                )
                             )
                             InfoSection(
                                 title = stringResource(R.string.address),
-                                content = state.establishment?.adress ?: "Not specified"
+                                content = state.establishment?.adress ?: "-"
                             )
                             InfoSection(
                                 title = stringResource(R.string.information),
-                                content = state.establishment?.description ?: "No description available."
+                                content = state.establishment?.description ?: "-"
                             )
                         }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = AppTheme.dimension.large),
+                            verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.normal)
+                        ) {
+                            state.menu?.forEach { menuItem ->
+                                NNSMenuCard(
+                                    modifier = Modifier.clickable {
+                                        selectedMenuItem = menuItem
+                                    },
+                                    title = menuItem.itemDetails?.name ?: "",
+                                    url = menuItem.itemDetails?.picture ?: "",
+                                    collectTill = menuItem.priceData?.endTime ?: "",
+                                    allergens = !menuItem.itemDetails?.allergens.isNullOrEmpty(),
+                                    grams = menuItem.itemDetails?.weightInfo?.filter { it.isDigit() }?.toIntOrNull() ?: 0,
+                                    picture = menuItem.itemDetails?.picture ?: ""
+                                )
+                            }
+                        }
                     } else {
-                        Text(
-                            text = "Reviews will be here soon...",
-                            style = AppTheme.typography.regular.copy(color = AppTheme.color.grey),
-                            modifier = Modifier.padding(vertical = AppTheme.dimension.normal)
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = AppTheme.dimension.large),
+                            verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.normal)
+                        ) {
+
+                            if (state.reviews.isEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.noReviews),
+                                    style = AppTheme.typography.regular.copy(color = AppTheme.color.grey),
+                                    modifier = Modifier.padding(vertical = AppTheme.dimension.normal)
+                                )
+                            } else {
+                                state.reviews.forEach { review ->
+                                    NNSReviewCard(
+                                        name = review.userName,
+                                        date = review.createdAt,
+                                        rating = review.rating,
+                                        text = review.comment,
+                                        isMyReview = review.isMyReview,
+                                        isEditable = review.isEditable,
+                                        onEdit = {
+                                            onAction(EstablishmentDetails.Action.OnOpenReviewSheet(review = review))
+                                        },
+                                        onDelete = {
+                                            onAction(EstablishmentDetails.Action.OnDeleteReview(review.id))
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(AppTheme.dimension.large))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = AppTheme.dimension.large),
-                        verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.normal)
-                    ) {
-                        state.menu?.forEach { menuItem ->
-                            NNSMenuCard(
-                                modifier = Modifier.clickable {
-                                    selectedMenuItem = menuItem
-                                },
-                                title = menuItem.itemDetails?.name ?: "Unknown",
-                                url = menuItem.itemDetails?.picture ?: "",
-                                collectTill = menuItem.priceData?.endTime ?: "N/A",
-                                allergens = !menuItem.itemDetails?.allergens.isNullOrEmpty(),
-                                grams = menuItem.itemDetails?.weightInfo?.filter { it.isDigit() }?.toIntOrNull() ?: 0,
-                                picture = menuItem.itemDetails?.picture ?: ""
-                            )
-                        }
-                    }
 
                 }
             }
@@ -268,6 +304,37 @@ fun EstablishmentDetailsScreen(
                     )
                 }
             }
+
+            if (selectedTab == DetailsTab.REVIEWS) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(AppTheme.color.background.copy(alpha = 0.95f))
+                        .padding(AppTheme.dimension.normal),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    NNSButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringResource(R.string.writeReview),
+                        enabled = !isLimitReached,
+                        onClick = {
+                            onAction(EstablishmentDetails.Action.OnOpenReviewSheet(review = null))
+                        }
+                    )
+
+                    if (isLimitReached) {
+                        Spacer(modifier = Modifier.height(AppTheme.dimension.small))
+                        Text(
+                            text = stringResource(R.string.oneReview),
+                            style = AppTheme.typography.regular.copy(
+                                color = AppTheme.color.error,
+                            ),
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+            }
         }
 
         selectedMenuItem?.let { item ->
@@ -277,6 +344,16 @@ fun EstablishmentDetailsScreen(
                 onReserve = { quantity ->
                     println("Reserved $quantity items!")
                     selectedMenuItem = null
+                }
+            )
+        }
+
+        if (state.showReviewSheet) {
+            NNSReviewBottomSheet(
+                initialReview = state.editingReview,
+                onDismiss = { onAction(EstablishmentDetails.Action.OnCloseReviewSheet) },
+                onSubmit = { rating, comment ->
+                    onAction(EstablishmentDetails.Action.OnSubmitReview(rating, comment))
                 }
             )
         }
@@ -331,6 +408,42 @@ private fun TabItem(
         } else {
             Spacer(modifier = Modifier.height(2.dp))
         }
+    }
+}
+
+@Composable
+private fun formatWorkingHours(rawHours: String?): String {
+    if (rawHours.isNullOrBlank()) return "-"
+    val closedText = stringResource(R.string.closed)
+
+    val daysMap = mapOf(
+        "mon" to "Monday",
+        "tue" to "Tuesday",
+        "wed" to "Wednesday",
+        "thu" to "Thursday",
+        "fri" to "Friday",
+        "sat" to "Saturday",
+        "sun" to "Sunday"
+    )
+
+    return try {
+        rawHours.split("|").joinToString("\n") { dayData ->
+            val parts = dayData.split("=")
+            if (parts.size == 2) {
+                val dayKey = parts[0].lowercase().trim()
+                val timeValue = parts[1].trim()
+
+                val dayName = daysMap[dayKey] ?: dayKey.replaceFirstChar { it.uppercase() }
+
+                val time = if (timeValue.lowercase() == "closed") closedText else timeValue
+
+                "$dayName: $time"
+            } else {
+                dayData
+            }
+        }
+    } catch (e: Exception) {
+        rawHours
     }
 }
 
