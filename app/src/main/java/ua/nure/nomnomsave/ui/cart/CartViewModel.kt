@@ -14,15 +14,19 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.config.qrCodeBitmapDefaultSize
+import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
+import ua.nure.nomnomsave.repository.user.UserRepository
 import ua.nure.nomnomsave.ui.cart.Cart.Event.*
+import ua.nure.nomnomsave.ui.cart.Cart.UserStats
 import javax.inject.Inject
 
 @HiltViewModel
 class CartViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
     private val resourceRepository: ResourceRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
     private val TAG by lazy { CartViewModel::class.simpleName }
 
@@ -30,6 +34,7 @@ class CartViewModel @Inject constructor(
     val state = _state.onStart {
         loadOrders()
         observeOrders()
+        loadUserProfile()
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000L),
@@ -294,6 +299,30 @@ class CartViewModel @Inject constructor(
             orderRepository.getOrders().collect { list ->
                 Log.d(TAG, "observeOrders: ${list.firstOrNull()?.orderEntity?.id}")
                 _state.update { s -> s.copy(orders = list) }
+            }
+        }
+    }
+
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            try {
+                when (val result = userRepository.getProfile()) {
+                    is Result.Success -> {
+                        val user = result.data.user
+                        val stats = UserStats(
+                            successfulOrdersCount = user.successfulOrdersCount,
+                            totalSavings = user.totalSavings,
+                            totalOrderedItems = user.totalOrderedItems
+                        )
+                        _state.update { s -> s.copy(userStats = stats) }
+                        Log.d(TAG, "User stats loaded: $stats")
+                    }
+                    is Result.Error -> {
+                        Log.e(TAG, "Failed to load user profile: ${result.error}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while loading user profile: ${e.message}", e)
             }
         }
     }

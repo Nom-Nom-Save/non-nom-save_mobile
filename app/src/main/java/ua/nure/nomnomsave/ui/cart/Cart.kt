@@ -48,5 +48,12 @@ object Cart {
         val qrCodeDialogTitle: String? = null,
         val qrBitmap: Bitmap? = null,
         val selectedTab: Tab = Tab.ORDER,
+        val userStats: UserStats? = null,
+    )
+
+    data class UserStats(
+        val successfulOrdersCount: Int = 0,
+        val totalSavings: Double = 0.0,
+        val totalOrderedItems: Int = 0,
     )
 }
