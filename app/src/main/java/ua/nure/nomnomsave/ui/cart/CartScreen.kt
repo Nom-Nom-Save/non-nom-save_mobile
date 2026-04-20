@@ -1,16 +1,26 @@
 package ua.nure.nomnomsave.ui.cart
 
 import android.graphics.Bitmap
+import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,7 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,11 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.db.data.entity.Order
 import ua.nure.nomnomsave.repository.dto.OrderStatus
 import ua.nure.nomnomsave.ui.cart.components.MyOrderCard
 import ua.nure.nomnomsave.ui.cart.components.OrderCard
+import ua.nure.nomnomsave.ui.compose.NNSButton
 import ua.nure.nomnomsave.ui.compose.NNSInputField
 import ua.nure.nomnomsave.ui.compose.NNSQRDialog
 import ua.nure.nomnomsave.ui.compose.NNSScreen
@@ -134,53 +149,93 @@ private fun OrderTabContent(
 ) {
     var search by remember { mutableStateOf(state.query) }
 
-    NNSInputField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = AppTheme.dimension.normal)
-            .padding(top = AppTheme.dimension.normal),
-        label = stringResource(R.string.searchPromt),
-        value = search,
-    ) {
-        search = it
-        onAction(Cart.Action.OnQueryChanged(query = it))
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
     ) {
-        LazyColumn(
+        NNSInputField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = AppTheme.dimension.normal)
                 .padding(top = AppTheme.dimension.normal),
+            label = stringResource(R.string.searchPromt),
+            value = search,
         ) {
-            val filtered = (state.orders ?: emptyList()).filter { order ->
-            order.orderStatus == OrderStatus.Reserved
-        }.let { list ->
-            if (state.query.isNullOrBlank()) list
-            else list.filter {
-                it.orderEntity.establishmentName.contains(state.query, ignoreCase = true) ||
-                        it.details.any { d -> d.itemName.contains(state.query, ignoreCase = true) }
-            }
+            search = it
+            onAction(Cart.Action.OnQueryChanged(query = it))
         }
 
-        items(items = filtered, key = { it.orderEntity.id }) { order ->
-            OrderCard(
-                order = order,
-                onOrder = {
-                    onAction(
-                        Cart.Action.OnQR(
-                            data = order.orderEntity.qrCodeData,
-                            title = order.details.firstOrNull()?.itemName ?: ""
-                        )
-                    )
-                },
-                onDelete = { onAction(Cart.Action.OnDeleteOrder(id = order.orderEntity.id)) }
+        if (state.localCartItems.isNotEmpty()) {
+            Text(
+                modifier = Modifier
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.normal),
+                text = "Your Order (${state.localCartItems.size} items)",
+                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
             )
-        }
+            
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.small),
+            ) {
+                val groupedByEstablishment = state.localCartItems.groupBy { it.establishmentName }
+                
+                groupedByEstablishment.forEach { (establishmentName, items) ->
+                    item(key = establishmentName) {
+                        LocalOrderCard(
+                            establishmentName = establishmentName,
+                            establishmentLogo = items.first().establishmentLogo,
+                            establishmentBanner = items.first().establishmentBanner,
+                            items = items,
+                            onRemoveItem = { menuPriceId ->
+                                onAction(Cart.Action.OnRemoveFromLocalCart(menuPriceId))
+                            },
+                            onOrderItem = { menuPriceId, quantity ->
+                                onAction(Cart.Action.OnOrderSingleItem(menuPriceId, quantity))
+                            },
+                            onOrderAll = { establishment ->
+                                onAction(Cart.Action.OnOrderAllFromEstablishment(establishment))
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.normal),
+            ) {
+                val filtered = (state.orders ?: emptyList()).filter { order ->
+                    order.orderStatus == OrderStatus.Reserved
+                }.let { list ->
+                    if (state.query.isNullOrBlank()) list
+                    else list.filter {
+                        it.orderEntity.establishmentName.contains(state.query, ignoreCase = true) ||
+                                it.details.any { d -> d.itemName.contains(state.query, ignoreCase = true) }
+                    }
+                }
+
+                items(items = filtered, key = { it.orderEntity.id }) { order ->
+                    OrderCard(
+                        order = order,
+                        onOrder = {
+                            onAction(
+                                Cart.Action.OnQR(
+                                    data = order.orderEntity.qrCodeData,
+                                    title = order.details.firstOrNull()?.itemName ?: ""
+                                )
+                            )
+                        },
+                        onDelete = { onAction(Cart.Action.OnDeleteOrder(id = order.orderEntity.id)) }
+                    )
+                }
+            }
         }
     }
 }
@@ -288,6 +343,287 @@ private fun EmptyOrdersText(text: String) {
 }
 
 private val Order.orderStatus get() = this.orderEntity.orderStatus
+
+@Composable
+private fun LocalOrderCard(
+    establishmentName: String,
+    establishmentLogo: String?,
+    establishmentBanner: String?,
+    items: List<LocalCartItem>,
+    onRemoveItem: (String) -> Unit,
+    onOrderItem: (String, Int) -> Unit = { _, _ -> },
+    onOrderAll: (String) -> Unit = { }
+) {
+    val firstItem = items.firstOrNull()
+    val totalWeight = items.sumOf { it.detail.weight * it.detail.quantity }
+    val totalPrice = items.sumOf { it.detail.price * it.detail.quantity }
+    val allAllergens = items.flatMap { it.allergens }.distinct()
+    val expiresAt = items.firstOrNull()?.expiresAt
+    val establishmentAddress = items.firstOrNull()?.establishmentAddress
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppTheme.dimension.normal))
+            .background(AppTheme.color.background)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+        ) {
+            AsyncImage(
+                model = establishmentBanner ?: establishmentLogo,
+                contentDescription = establishmentName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(
+                        topStart = AppTheme.dimension.normal,
+                        topEnd = AppTheme.dimension.normal
+                    )),
+                placeholder = painterResource(R.drawable.placeholder_image),
+                error = painterResource(R.drawable.placeholder_image),
+            )
+
+            IconButton(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(AppTheme.dimension.small)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(AppTheme.color.background),
+                onClick = { }
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.favorite_passive),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = AppTheme.dimension.small),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = establishmentName,
+                style = AppTheme.typography.large.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "5",
+                    style = AppTheme.typography.regular.copy(
+                        color = AppTheme.color.active,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+                Icon(
+                    painter = painterResource(R.drawable.star_rate),
+                    contentDescription = null,
+                    tint = AppTheme.color.active,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        if (!establishmentAddress.isNullOrBlank()) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = 2.dp),
+                text = establishmentAddress,
+                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                maxLines = 1,
+            )
+        }
+
+        if (firstItem != null) {
+            AsyncImage(
+                model = firstItem.detail.itemPicture,
+                contentDescription = firstItem.detail.itemName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.small)
+                    .clip(RoundedCornerShape(AppTheme.dimension.small)),
+                placeholder = painterResource(R.drawable.placeholder_image),
+                error = painterResource(R.drawable.placeholder_image),
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = firstItem.detail.itemName,
+                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                )
+                Text(
+                    text = "$totalWeight g",
+                    style = AppTheme.typography.regular.copy(color = AppTheme.color.grey),
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = AppTheme.dimension.extraSmall),
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            expiresAt?.let {
+                OutlinedChip(
+                    text = "Collect till ${formatTime(it)}",
+                    borderColor = AppTheme.color.grey,
+                    textColor = AppTheme.color.grey,
+                )
+            }
+
+            if (allAllergens.isNotEmpty()) {
+                OutlinedChip(
+                    text = "Allergens",
+                    borderColor = AppTheme.color.error,
+                    textColor = AppTheme.color.error,
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = AppTheme.dimension.normal),
+        ) {
+            items.forEachIndexed { index, item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = AppTheme.dimension.small),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = item.detail.itemName,
+                            style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                        )
+                        Text(
+                            text = "Qty: ${item.detail.quantity} × ${String.format("%.2f", item.detail.price)} ₴",
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                        )
+                    }
+                    
+                    Text(
+                        text = String.format("%.2f", item.detail.price * item.detail.quantity) + " ₴",
+                        style = AppTheme.typography.small.copy(fontWeight = FontWeight.SemiBold),
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = AppTheme.dimension.small),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        modifier = Modifier.size(36.dp),
+                        onClick = { onRemoveItem(item.detail.menuPriceId) }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.trash),
+                            contentDescription = null,
+                            tint = AppTheme.color.error,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    NNSButton(
+                        modifier = Modifier.weight(1f),
+                        text = "Order",
+                        onClick = { 
+                            Log.d("CartScreen", "Order button clicked for: ${item.detail.itemName}, menuPriceId: ${item.detail.menuPriceId}, quantity: ${item.detail.quantity}")
+                            onOrderItem(item.detail.menuPriceId, item.detail.quantity) 
+                        }
+                    )
+                }
+                
+                if (index < items.size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = AppTheme.dimension.small),
+                        color = AppTheme.color.background
+                    )
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = AppTheme.dimension.normal),
+            verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
+        ) {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = "Total: ${String.format("%.2f", totalPrice)} ₴",
+                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold, color = AppTheme.color.active),
+            )
+
+            NNSButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = "Order All from ${establishmentName}",
+                onClick = { onOrderAll(establishmentName) }
+            )
+        }
+
+        Box(modifier = Modifier.height(AppTheme.dimension.normal))
+    }
+}
+
+@Composable
+private fun OutlinedChip(
+    text: String,
+    borderColor: Color,
+    textColor: Color,
+) {
+    Text(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(50.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        text = text,
+        style = AppTheme.typography.small.copy(color = textColor),
+    )
+}
+
+private fun formatTime(dateTime: java.time.LocalDateTime): String {
+    return try {
+        dateTime.format(java.time.format.DateTimeFormatter.ofPattern("h a"))
+    } catch (e: Exception) {
+        ""
+    }
+}
 
 
 @Preview(showSystemUi = true)

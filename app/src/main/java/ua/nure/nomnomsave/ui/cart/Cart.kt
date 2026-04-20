@@ -2,7 +2,18 @@ package ua.nure.nomnomsave.ui.cart
 
 import android.graphics.Bitmap
 import ua.nure.nomnomsave.db.data.entity.Order
+import ua.nure.nomnomsave.db.data.entity.OrderDetailsEntity
 import ua.nure.nomnomsave.navigation.Screen
+
+data class LocalCartItem(
+    val detail: OrderDetailsEntity,
+    val establishmentName: String,
+    val establishmentAddress: String?,
+    val establishmentLogo: String?,
+    val establishmentBanner: String?,
+    val allergens: List<String> = emptyList(),
+    val expiresAt: java.time.LocalDateTime? = null,
+)
 
 object Cart {
     sealed interface Event {
@@ -18,6 +29,12 @@ object Cart {
         data class OnDismissQRCodeDialog(val state: Boolean) : Action
         data class OnDeleteOrder(val id: String) : Action
         data class OnTabSelected(val tab: Tab) : Action
+        data class OnCreateOrder(val menuPriceId: String, val quantity: Int) : Action
+        data class OnAddToLocalCart(val item: LocalCartItem) : Action
+        data class OnRemoveFromLocalCart(val menuPriceId: String) : Action
+        data class OnOrderSingleItem(val menuPriceId: String, val quantity: Int) : Action
+        data object OnSubmitLocalOrder : Action
+        data class OnOrderAllFromEstablishment(val establishmentName: String) : Action
     }
 
     enum class Tab { ORDER, MY_ORDERS }
@@ -26,6 +43,7 @@ object Cart {
         val inProgress: Boolean = false,
         val query: String? = null,
         val orders: List<Order>? = null,
+        val localCartItems: List<LocalCartItem> = emptyList(),
         val showQRCodeDialog: Boolean = false,
         val qrCodeDialogTitle: String? = null,
         val qrBitmap: Bitmap? = null,

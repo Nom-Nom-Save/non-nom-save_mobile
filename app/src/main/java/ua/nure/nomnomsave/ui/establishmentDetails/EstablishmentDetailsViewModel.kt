@@ -110,6 +110,12 @@ class EstablishmentDetailsViewModel @Inject constructor(
             is EstablishmentDetails.Action.OnDeleteReview -> {
                 reviewRepository.deleteReview(action.reviewId)
             }
+            is EstablishmentDetails.Action.OnReserveNow -> {
+                _event.emit(EstablishmentDetails.Event.OnAddToCart(
+                    menuItem = action.menuItem,
+                    quantity = action.quantity
+                ))
+            }
         }
     }
 }

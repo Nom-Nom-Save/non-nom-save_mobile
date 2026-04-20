@@ -52,7 +52,7 @@ fun OrderCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AppTheme.dimension.normal))
-            .background(AppTheme.color.background)
+            .background(AppTheme.color.cardBackground)
     ) {
         Box(
             modifier = Modifier
@@ -200,7 +200,6 @@ fun OrderCard(
             style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
             maxLines = 1,
         )
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
