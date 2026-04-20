@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.R
+import ua.nure.nomnomsave.navigation.Screen
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.profile.ProfileRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
@@ -116,6 +117,10 @@ class ProfileViewModel @Inject constructor(
                 notifyClosingSoon = state.value.profile?.notifyClosingSoon,
                 avatarUrl = state.value.profile?.avatarUrl
             )
+
+            Profile.Action.OnUnlockPremium -> {
+                _event.emit(Profile.Event.OnNavigate(route = Screen.Premium))
+            }
         }
     }
 

@@ -24,6 +24,7 @@ object Profile {
         data object OnCloseTimeChange : Action
 
         data object OnSave: Action
+        data object OnUnlockPremium : Action
     }
 
     data class State(

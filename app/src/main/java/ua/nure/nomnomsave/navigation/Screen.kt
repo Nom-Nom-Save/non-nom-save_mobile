@@ -21,6 +21,9 @@ sealed class Screen {
     data object Profile : Screen()
 
     @Serializable
+    data object Premium : Screen()
+
+    @Serializable
     sealed class Cart : Screen() {
         @Serializable
         data object CartList : Cart()
