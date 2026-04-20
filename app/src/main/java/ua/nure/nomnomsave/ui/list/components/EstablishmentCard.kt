@@ -28,6 +28,9 @@ import coil3.compose.AsyncImage
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.ui.theme.AppTheme
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun EstablishmentCard(
@@ -86,20 +89,7 @@ fun EstablishmentCard(
             }
 
             Text(
-                text = entity.workingHours?.let { hours ->
-                    try {
-                        val firstDay = hours.split("|").firstOrNull() ?: "-"
-                        val parts = firstDay.split("=")
-                        if (parts.size == 2) {
-                            val time = parts[1].trim()
-                            time
-                        } else {
-                            firstDay
-                        }
-                    } catch (e: Exception) {
-                        hours
-                    }
-                } ?: "-",
+                text = parseTodayWorkingHours(entity.workingHours),
                 style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
                 maxLines = 1,
             )
@@ -181,3 +171,32 @@ private fun EstablishmentCardPreview() {
         }
     }
 }
+
+private fun parseTodayWorkingHours(workingHours: String?): String {
+    if (workingHours.isNullOrBlank()) return "—"
+    
+    return try {
+        val today = LocalDate.now().dayOfWeek
+        val dayName = today.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).lowercase()
+        
+        val hoursMap = workingHours.split("|").associate { dayEntry ->
+            val parts = dayEntry.split("=", limit = 2)
+            if (parts.size == 2) {
+                parts[0].trim() to parts[1].trim()
+            } else {
+                "" to ""
+            }
+        }
+
+        val todayHours = hoursMap[dayName] ?: return "—"
+        
+        if (todayHours.lowercase() == "closed") {
+            return "Closed"
+        }
+        
+        todayHours
+    } catch (e: Exception) {
+        "—"
+    }
+}
+

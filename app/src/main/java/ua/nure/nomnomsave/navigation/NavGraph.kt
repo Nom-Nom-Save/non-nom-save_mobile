@@ -18,6 +18,8 @@ fun NavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
+    val cartViewModel: ua.nure.nomnomsave.ui.cart.CartViewModel = hiltViewModel()
+    
     NavHost(
         modifier = modifier,
         navController = navController,
@@ -44,11 +46,12 @@ fun NavGraph(
         composable<Screen.List.EstablishmentDetails> {
             EstablishmentDetailsScreen(
                 viewModel = hiltViewModel(),
-                navController = navController
+                navController = navController,
+                cartViewModel = cartViewModel
             )
         }
 
-        cartGraph(navController = navController)
+        cartGraph(navController = navController, cartViewModel = cartViewModel)
         listGraph(navController = navController)
         favoriteGraph(navController = navController)
         profileGraph(navController = navController)

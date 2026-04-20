@@ -48,13 +48,13 @@ fun MyOrderCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AppTheme.dimension.small))
-            .background(AppTheme.color.background)
+            .background(AppTheme.color.cardBackground)
             .padding(AppTheme.dimension.small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
     ) {
         AsyncImage(
-            model = entity.establishmentBanner ?: entity.establishmentLogo,
+            model = firstItem?.itemPicture,
             contentDescription = firstItem?.itemName,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -110,28 +110,34 @@ fun MyOrderCard(
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(
-                        modifier = Modifier.size(32.dp),
-                        onClick = onDelete
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.trash),
-                            contentDescription = null,
-                            tint = AppTheme.color.error,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
                     if (entity.orderStatus == OrderStatus.Reserved) {
                         IconButton(
                             modifier = Modifier.size(32.dp),
-                            onClick = onQR
+                            onClick = onDelete
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.trash),
+                                contentDescription = null,
+                                tint = Color(0xFFFFC107),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    if (entity.orderStatus == OrderStatus.Reserved) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF2D6A4F))
+                                .clickable { onQR() },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.qr_code),
                                 contentDescription = null,
-                                tint = Color.Unspecified,
-                                modifier = Modifier.size(32.dp)
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }

@@ -10,6 +10,7 @@ object EstablishmentDetails {
     sealed interface Event {
         data class OnNavigate(val route: Screen) : Event
         data object OnBack : Event
+        data class OnAddToCart(val menuItem: MenuEntity, val quantity: Int) : Event
     }
 
     sealed interface Action {
@@ -19,6 +20,7 @@ object EstablishmentDetails {
         data object OnCloseReviewSheet : Action
         data class OnSubmitReview(val rating: Int, val comment: String) : Action
         data class OnDeleteReview(val reviewId: String) : Action
+        data class OnReserveNow(val menuItem: MenuEntity, val quantity: Int) : Action
     }
 
     data class State(

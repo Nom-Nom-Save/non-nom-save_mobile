@@ -41,11 +41,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.db.data.entity.ItemDetailsEntity
 import ua.nure.nomnomsave.db.data.entity.MenuEntity
 import ua.nure.nomnomsave.db.data.entity.PriceDataEntity
+import ua.nure.nomnomsave.db.data.entity.CartItemEntity
 import ua.nure.nomnomsave.ui.compose.NNSButton
 import ua.nure.nomnomsave.ui.compose.NNSMenuBottomSheet
 import ua.nure.nomnomsave.ui.compose.NNSMenuCard
@@ -53,6 +57,7 @@ import ua.nure.nomnomsave.ui.compose.NNSReviewBottomSheet
 import ua.nure.nomnomsave.ui.compose.NNSReviewCard
 import ua.nure.nomnomsave.ui.compose.NNSScreen
 import ua.nure.nomnomsave.ui.theme.AppTheme
+import android.util.Log
 
 enum class DetailsTab {
     DETAILS, REVIEWS
@@ -61,7 +66,8 @@ enum class DetailsTab {
 @Composable
 fun EstablishmentDetailsScreen(
     viewModel: EstablishmentDetailsViewModel,
-    navController: NavController
+    navController: NavController,
+    cartViewModel: ua.nure.nomnomsave.ui.cart.CartViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -70,6 +76,40 @@ fun EstablishmentDetailsScreen(
             when (it) {
                 EstablishmentDetails.Event.OnBack -> navController.navigateUp()
                 is EstablishmentDetails.Event.OnNavigate -> navController.navigate(route = it.route)
+                is EstablishmentDetails.Event.OnAddToCart -> {
+                    val menuItem = it.menuItem
+                    val establishment = state.establishment
+                    
+                    val orderDetail = ua.nure.nomnomsave.db.data.entity.OrderDetailsEntity(
+                        id = java.util.UUID.randomUUID().toString(),
+                        orderId = "",
+                        menuPriceId = menuItem.priceData?.id ?: "",
+                        quantity = it.quantity,
+                        price = menuItem.priceData?.discountPrice ?: menuItem.priceData?.originalPrice ?: 0.0,
+                        originalPrice = menuItem.priceData?.originalPrice ?: 0.0,
+                        discountPrice = menuItem.priceData?.discountPrice ?: 0.0,
+                        itemName = menuItem.itemDetails?.name ?: "Unknown",
+                        itemType = menuItem.itemType ?: "Product",
+                        itemPicture = menuItem.itemDetails?.picture,
+                        weight = menuItem.itemDetails?.weightInfo?.filter { c -> c.isDigit() }?.toIntOrNull() ?: 0,
+                        minWeight = null,
+                        maxWeight = null
+                    )
+                    
+                    val cartItem = ua.nure.nomnomsave.ui.cart.LocalCartItem(
+                        detail = orderDetail,
+                        establishmentName = establishment?.name ?: "Unknown",
+                        establishmentAddress = establishment?.adress,
+                        establishmentLogo = establishment?.logo,
+                        establishmentBanner = establishment?.banner,
+                        allergens = menuItem.itemDetails?.allergens ?: emptyList(),
+                        expiresAt = java.time.LocalDateTime.now().plusHours(2)
+                    )
+                    
+                    cartViewModel.onAction(
+                        ua.nure.nomnomsave.ui.cart.Cart.Action.OnAddToLocalCart(cartItem)
+                    )
+                }
             }
         }
     }
@@ -342,7 +382,12 @@ fun EstablishmentDetailsScreen(
                 menuItem = item,
                 onDismiss = { selectedMenuItem = null },
                 onReserve = { quantity ->
-                    println("Reserved $quantity items!")
+                    onAction(
+                        EstablishmentDetails.Action.OnReserveNow(
+                            menuItem = item,
+                            quantity = quantity
+                        )
+                    )
                     selectedMenuItem = null
                 }
             )
@@ -427,10 +472,10 @@ private fun formatWorkingHours(rawHours: String?): String {
     )
 
     return try {
-        rawHours.split("|").joinToString("\n") { dayData ->
+        rawHours.split("|").mapNotNull { dayData ->
             val parts = dayData.split("=")
             if (parts.size == 2) {
-                val dayKey = parts[0].lowercase().trim()
+                val dayKey = parts[0].trim()
                 val timeValue = parts[1].trim()
 
                 val dayName = daysMap[dayKey] ?: dayKey.replaceFirstChar { it.uppercase() }
@@ -439,9 +484,9 @@ private fun formatWorkingHours(rawHours: String?): String {
 
                 "$dayName: $time"
             } else {
-                dayData
+                null
             }
-        }
+        }.joinToString("\n")
     } catch (e: Exception) {
         rawHours
     }

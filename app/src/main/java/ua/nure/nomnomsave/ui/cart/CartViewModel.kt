@@ -76,18 +76,207 @@ class CartViewModel @Inject constructor(
             }
 
             is Cart.Action.OnDeleteOrder -> cancelOrder(action.id)
+            is Cart.Action.OnCreateOrder -> createOrderFromMenuItem(action.menuPriceId, action.quantity)
+            is Cart.Action.OnAddToLocalCart -> addToLocalCart(action.item)
+            is Cart.Action.OnRemoveFromLocalCart -> removeFromLocalCart(action.menuPriceId)
+            is Cart.Action.OnOrderSingleItem -> submitSingleItem(action.menuPriceId, action.quantity)
+            Cart.Action.OnSubmitLocalOrder -> submitLocalOrder()
+            is Cart.Action.OnOrderAllFromEstablishment -> orderAllFromEstablishment(action.establishmentName)
+        }
+    }
+
+    private fun addToLocalCart(item: LocalCartItem) {
+        _state.update { s ->
+            val existing = s.localCartItems.find { it.detail.menuPriceId == item.detail.menuPriceId }
+            val updated = if (existing != null) {
+                s.localCartItems.map { 
+                    if (it.detail.menuPriceId == item.detail.menuPriceId) {
+                        it.copy(detail = it.detail.copy(quantity = it.detail.quantity + item.detail.quantity))
+                    } else it
+                }
+            } else {
+                s.localCartItems + item
+            }
+            s.copy(localCartItems = updated)
+        }
+    }
+
+    private fun removeFromLocalCart(menuPriceId: String) {
+        _state.update { s ->
+            s.copy(localCartItems = s.localCartItems.filter { it.detail.menuPriceId != menuPriceId })
+        }
+    }
+
+    private fun submitSingleItem(menuPriceId: String, quantity: Int) {
+        viewModelScope.launch {
+            try {
+                _state.update { it.copy(inProgress = true) }
+                
+                val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
+                    items = listOf(
+                        ua.nure.nomnomsave.repository.dto.OrderItemRequest(
+                            menuPriceId = menuPriceId,
+                            quantity = quantity
+                        )
+                    )
+                )
+                
+                Log.d("CartViewModel", "DEBUG submitSingleItem: request=$createOrderRequest")
+                
+                orderRepository.createOrder(createOrderRequest).let { result ->
+                    when (result) {
+                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                            Log.d(TAG, "Order submitted successfully: ${result.data.id}")
+                            _state.update { s ->
+                                s.copy(
+                                    inProgress = false,
+                                    localCartItems = s.localCartItems.filter { it.detail.menuPriceId != menuPriceId }
+                                )
+                            }
+                            loadOrders()
+                        }
+                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                            Log.e(TAG, "Failed to submit order: ${result.error}")
+                            _state.update { it.copy(inProgress = false) }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception: ${e.message}", e)
+                _state.update { it.copy(inProgress = false) }
+            }
+        }
+    }
+
+    private fun submitLocalOrder() {
+        viewModelScope.launch {
+            try {
+                val items = _state.value.localCartItems
+                if (items.isEmpty()) {
+                    return@launch
+                }
+
+                _state.update { it.copy(inProgress = true) }
+                
+                val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
+                    items = items.map { item ->
+                        ua.nure.nomnomsave.repository.dto.OrderItemRequest(
+                            menuPriceId = item.detail.menuPriceId,
+                            quantity = item.detail.quantity
+                        )
+                    }
+                )
+
+                orderRepository.createOrder(createOrderRequest).let { result ->
+                    when (result) {
+                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                            _state.update { it.copy(inProgress = false, localCartItems = emptyList()) }
+                            loadOrders()
+                        }
+                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                            _state.update { it.copy(inProgress = false) }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(inProgress = false) }
+            }
+        }
+    }
+
+    private fun orderAllFromEstablishment(establishmentName: String) {
+        viewModelScope.launch {
+            try {
+                val items = _state.value.localCartItems.filter { it.establishmentName == establishmentName }
+                if (items.isEmpty()) {
+                    return@launch
+                }
+
+                _state.update { it.copy(inProgress = true) }
+                
+                val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
+                    items = items.map { item ->
+                        ua.nure.nomnomsave.repository.dto.OrderItemRequest(
+                            menuPriceId = item.detail.menuPriceId,
+                            quantity = item.detail.quantity
+                        )
+                    }
+                )
+
+                orderRepository.createOrder(createOrderRequest).let { result ->
+                    when (result) {
+                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                            Log.d(TAG, "Order from establishment created successfully: ${result.data.id}")
+                            _state.update { s ->
+                                s.copy(
+                                    inProgress = false,
+                                    localCartItems = s.localCartItems.filter { it.establishmentName != establishmentName }
+                                )
+                            }
+                            loadOrders()
+                        }
+                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                            Log.e(TAG, "Failed to create order from establishment: ${result.error}")
+                            _state.update { it.copy(inProgress = false) }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while creating order from establishment: ${e.message}", e)
+                _state.update { it.copy(inProgress = false) }
+            }
         }
     }
 
     private fun cancelOrder(orderId: String) {
         viewModelScope.launch {
-            orderRepository.cancelOrder(orderId).let { result ->
-                when (result) {
-                    is ua.nure.nomnomsave.repository.Result.Success -> loadOrders()
-                    is ua.nure.nomnomsave.repository.Result.Error -> {
-                        Log.e(TAG, "Failed to cancel order: ${result.error}")
+            try {
+                orderRepository.cancelOrder(orderId).let { result ->
+                    when (result) {
+                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                            Log.d(TAG, "Order cancelled successfully: $orderId")
+                            loadOrders()
+                        }
+                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                            Log.e(TAG, "Failed to cancel order: ${result.error}")
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while cancelling order: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun createOrderFromMenuItem(menuPriceId: String, quantity: Int) {
+        viewModelScope.launch {
+            try {
+                _state.update { it.copy(inProgress = true) }
+                
+                val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
+                    items = listOf(
+                        ua.nure.nomnomsave.repository.dto.OrderItemRequest(
+                            menuPriceId = menuPriceId,
+                            quantity = quantity
+                        )
+                    )
+                )
+                orderRepository.createOrder(createOrderRequest).let { result ->
+                    when (result) {
+                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                            Log.d(TAG, "Order created successfully: ${result.data.id}")
+                            _state.update { it.copy(inProgress = false) }
+                            loadOrders()
+                        }
+                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                            Log.e(TAG, "Failed to create order: ${result.error}")
+                            _state.update { it.copy(inProgress = false) }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while creating order: ${e.message}", e)
+                _state.update { it.copy(inProgress = false) }
             }
         }
     }
