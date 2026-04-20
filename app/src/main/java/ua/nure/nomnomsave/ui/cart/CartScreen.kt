@@ -266,6 +266,16 @@ private fun MyOrdersTabContent(
             verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
         ) {
             item {
+                state.userStats?.let { stats ->
+                    UserStatsCard(
+                        successfulOrdersCount = stats.successfulOrdersCount,
+                        totalSavings = stats.totalSavings,
+                        totalOrderedItems = stats.totalOrderedItems
+                    )
+                }
+            }
+
+            item {
                 OrderSectionTitle(title = stringResource(R.string.upcomingOrders))
             }
             if (upcoming.isEmpty()) {
@@ -318,6 +328,82 @@ private fun MyOrdersTabContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun UserStatsCard(
+    successfulOrdersCount: Int,
+    totalSavings: Double,
+    totalOrderedItems: Int,
+) {
+    Text(
+        text = "Your statistics",
+        style = AppTheme.typography.regular.copy(fontWeight = FontWeight.Bold),
+        fontSize = AppTheme.typography.regular.fontSize * 1.1f
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = Color(0xFFE8F5E9),
+                shape = RoundedCornerShape(AppTheme.dimension.small)
+            )
+            .border(
+                width = 1.dp,
+                color = Color(0xFF4CAF50),
+                shape = RoundedCornerShape(AppTheme.dimension.small)
+            )
+            .padding(AppTheme.dimension.normal)
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = AppTheme.dimension.small),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            StatItem(
+                label = "Total orders",
+                value = successfulOrdersCount.toString(),
+                modifier = Modifier.weight(1f)
+            )
+            StatItem(
+                label = "Money saved",
+                value = String.format("%.2f ₴", totalSavings),
+                modifier = Modifier.weight(1f)
+            )
+            StatItem(
+                label = "Ordered items",
+                value = totalOrderedItems.toString(),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatItem(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = AppTheme.typography.regular.copy(fontWeight = FontWeight.Bold),
+            fontSize = AppTheme.typography.regular.fontSize * 1.2f,
+            color = Color(0xFF2E7D32)
+        )
+        Text(
+            text = label,
+            style = AppTheme.typography.small,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 

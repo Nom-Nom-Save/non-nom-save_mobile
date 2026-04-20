@@ -19,4 +19,7 @@ data class ProfileDto(
     val notifyClosingSoon: Boolean = false,
     val notifyNewItems: Boolean = false,
     val createdAt: String,
+    val successfulOrdersCount: Int = 0,
+    val totalSavings: Double = 0.0,
+    val totalOrderedItems: Int = 0,
 )

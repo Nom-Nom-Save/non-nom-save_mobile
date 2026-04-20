@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -28,8 +27,6 @@ import ua.nure.nomnomsave.repository.dto.mapper.toEntity
 import ua.nure.nomnomsave.repository.onError
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.safeCall
-import java.time.LocalDateTime
-import kotlin.math.exp
 
 class UserRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
     private val httpClient: HttpClient,
@@ -114,4 +111,13 @@ class UserRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
 //                }
             }
     }
+
+    override suspend fun getProfile(): Result<ua.nure.nomnomsave.repository.dto.ProfileDataDto, DataError> =
+        withContext(Dispatchers.IO) {
+            safeCall<ua.nure.nomnomsave.repository.dto.ProfileDataDto> {
+                httpClient.get("users/me") {
+
+                }
+            }
+        }
 }

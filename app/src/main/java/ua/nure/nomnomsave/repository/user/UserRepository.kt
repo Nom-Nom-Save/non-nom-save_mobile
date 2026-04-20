@@ -5,6 +5,7 @@ import ua.nure.nomnomsave.db.data.entity.Favorite
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.dto.FavoritesResponseDto
+import ua.nure.nomnomsave.repository.dto.ProfileDataDto
 import ua.nure.nomnomsave.repository.dto.ResponseDto
 
 interface UserRepository {
@@ -12,6 +13,5 @@ interface UserRepository {
     fun getFavorites(): Flow<List<Favorite>>
     suspend fun deleteFromFavorites(favoriteId: String, establishmentId: String): Result<ResponseDto, DataError>
     suspend fun addToFavorites(establishmentId: String): Result<ResponseDto, DataError>
-
-
+    suspend fun getProfile(): Result<ProfileDataDto, DataError>
 }
