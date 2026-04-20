@@ -117,4 +117,7 @@ class UserRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
             safeCall<ua.nure.nomnomsave.repository.dto.ProfileDataDto> {
                 httpClient.get("users/me") {
 
+                }
+            }
+        }
 }
