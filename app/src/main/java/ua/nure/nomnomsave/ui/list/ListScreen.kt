@@ -51,7 +51,7 @@ fun ListScreen(
     LaunchedEffect(Unit) {
         viewModel.event.collect {
             when (it) {
-                is List.Event.OnNavigate -> navController.navigate(route = it.route)
+                is ListContract.Event.OnNavigate -> navController.navigate(route = it.route)
             }
         }
     }
@@ -64,8 +64,8 @@ fun ListScreen(
 
 @Composable
 private fun ListScreenContent(
-    state: List.State,
-    onAction: (List.Action) -> Unit
+    state: ListContract.State,
+    onAction: (ListContract.Action) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -80,7 +80,7 @@ private fun ListScreenContent(
             label = stringResource(R.string.searchPromt),
             value = state.searchQuery,
         ) {
-            onAction(List.Action.OnSearchChange(query = it))
+            onAction(ListContract.Action.OnSearchChange(query = it))
         }
 
         LazyRow(
@@ -93,29 +93,46 @@ private fun ListScreenContent(
             item {
                 SortChip(
                     label = stringResource(R.string.distance),
-                    ascending = state.selectedSort != List.SortOption.DISTANCE_DESC,
+                    sortDirection = if (state.selectedSort == ListContract.SortOption.DISTANCE) state.sortDirection else ListContract.SortDirection.ASCENDING,
                     onClick = {
-                        val next = if (state.selectedSort == List.SortOption.DISTANCE_ASC)
-                            List.SortOption.DISTANCE_DESC else List.SortOption.DISTANCE_ASC
-                        onAction(List.Action.OnSortChange(next))
+                        if (state.selectedSort == ListContract.SortOption.DISTANCE) {
+                            onAction(ListContract.Action.OnSortDirectionChange(state.sortDirection.toggle()))
+                        } else {
+                            onAction(ListContract.Action.OnSortChange(ListContract.SortOption.DISTANCE))
+                        }
                     }
                 )
             }
             item {
                 SortChip(
                     label = stringResource(R.string.rating),
-                    ascending = state.selectedSort != List.SortOption.RATING_DESC,
+                    sortDirection = if (state.selectedSort == ListContract.SortOption.RATING) state.sortDirection else ListContract.SortDirection.ASCENDING,
                     onClick = {
-                        val next = if (state.selectedSort == List.SortOption.RATING_ASC)
-                            List.SortOption.RATING_DESC else List.SortOption.RATING_ASC
-                        onAction(List.Action.OnSortChange(next))
+                        if (state.selectedSort == ListContract.SortOption.RATING) {
+                            onAction(ListContract.Action.OnSortDirectionChange(state.sortDirection.toggle()))
+                        } else {
+                            onAction(ListContract.Action.OnSortChange(ListContract.SortOption.RATING))
+                        }
+                    }
+                )
+            }
+            item {
+                SortChip(
+                    label = "Closing Time",
+                    sortDirection = if (state.selectedSort == ListContract.SortOption.CLOSING_TIME) state.sortDirection else ListContract.SortDirection.ASCENDING,
+                    onClick = {
+                        if (state.selectedSort == ListContract.SortOption.CLOSING_TIME) {
+                            onAction(ListContract.Action.OnSortDirectionChange(state.sortDirection.toggle()))
+                        } else {
+                            onAction(ListContract.Action.OnSortChange(ListContract.SortOption.CLOSING_TIME))
+                        }
                     }
                 )
             }
             item {
                 FilterChip(
                     label = stringResource(R.string.filters),
-                    onClick = { onAction(List.Action.OnShowFilters) }
+                    onClick = { onAction(ListContract.Action.OnShowFilters) }
                 )
             }
         }
@@ -147,10 +164,10 @@ private fun ListScreenContent(
                             entity = entity,
                             isFavorite = state.favorites?.any {it.establishment.id == entity.id} ?: false,
                             onFavoriteClick = {
-                                onAction(List.Action.OnFavoriteToggle(id = entity.id))
+                                onAction(ListContract.Action.OnFavoriteToggle(id = entity.id))
                             },
                             onClick = {
-                                 onAction(List.Action.OnNavigate(Screen.List.EstablishmentDetails(entity.id)))
+                                 onAction(ListContract.Action.OnNavigate(Screen.List.EstablishmentDetails(entity.id)))
                             }
                         )
                     }
@@ -164,11 +181,18 @@ private fun ListScreenContent(
             pendingMaxDistanceKm = state.pendingMaxDistanceKm,
             pendingMinRating = state.pendingMinRating,
             pendingTimeFilter = state.pendingTimeFilter,
-            onDistanceChange = { onAction(List.Action.OnDistanceChange(km = it)) },
-            onRatingChange = { onAction(List.Action.OnRatingChange(rating = it)) },
-            onTimeFilterChange = { onAction(List.Action.OnTimeFilterChange(option = it)) },
-            onApply = { onAction(List.Action.OnApplyFilters) },
-            onDismiss = { onAction(List.Action.OnDismissFilters) }
+            pendingCity = state.pendingCity,
+            pendingProductTypes = state.pendingProductTypes,
+            availableCities = state.availableCities,
+            availableProductTypes = state.availableProductTypes,
+            hasUserLocation = state.userLat != null && state.userLon != null,
+            onDistanceChange = { onAction(ListContract.Action.OnDistanceChange(km = it)) },
+            onRatingChange = { onAction(ListContract.Action.OnRatingChange(rating = it)) },
+            onTimeFilterChange = { option: ListContract.TimeFilterOption -> onAction(ListContract.Action.OnTimeFilterChange(option = option)) },
+            onCityChange = { onAction(ListContract.Action.OnCityChange(city = it)) },
+            onProductTypesChange = { onAction(ListContract.Action.OnProductTypesChange(typeIds = it)) },
+            onApply = { onAction(ListContract.Action.OnApplyFilters) },
+            onDismiss = { onAction(ListContract.Action.OnDismissFilters) }
         )
     }
 }
@@ -176,7 +200,7 @@ private fun ListScreenContent(
 @Composable
 private fun SortChip(
     label: String,
-    ascending: Boolean,
+    sortDirection: ListContract.SortDirection,
     onClick: () -> Unit,
 ) {
     Row(
@@ -196,10 +220,13 @@ private fun SortChip(
             )
         )
         Icon(
-            painter = painterResource(if (ascending) R.drawable.arrow_up else R.drawable.arrow_down),
+            painter = painterResource(
+                if (sortDirection == ListContract.SortDirection.ASCENDING) 
+                    R.drawable.arrow_up else R.drawable.arrow_down
+            ),
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(16.dp)
         )
     }
 }
@@ -232,7 +259,7 @@ private fun FilterChip(
 private fun ListScreenPreview() {
     AppTheme {
         ListScreenContent(
-            state = List.State(
+            state = ListContract.State(
                 filteredEstablishments = listOf(
                     EstablishmentEntity(id = "1", name = "The golden bakery", workingHours = "closes in 1 hour", adress = "Street", rating = "5.0"),
                     EstablishmentEntity(id = "2", name = "The golden bakery", workingHours = "closes in 1 hour", adress = "Street", rating = "4.5"),
@@ -249,7 +276,7 @@ private fun ListScreenPreview() {
 private fun ListScreenDarkPreview() {
     AppTheme {
         ListScreenContent(
-            state = List.State(
+            state = ListContract.State(
                 filteredEstablishments = listOf(
                     EstablishmentEntity(id = "1", name = "The golden bakery", workingHours = "closes in 1 hour", adress = "Street", rating = "5.0"),
                 )

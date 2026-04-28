@@ -83,7 +83,6 @@
     <string name="filter10km">10 km</string>
     <string name="filter1star">1+</string>
     <string name="filter5star">5</string>
-    <string name="filterTimeUntilClosing">Time Until Closing</string>
     <string name="maps">Map</string>
     <string name="unlockPremium">Unlock Premium</string>
     <string name="tabOrder">Order</string>
@@ -102,4 +101,7 @@
     <string name="reserve">Reserve Now</string>
     <string name="submitReview">Submit review</string>
     <string name="shareThoughts">Share your thoughts about this establishment...</string>
+    <string name="city">City</string>
+    <string name="productTypes">Product Types</string>
+    <string name="closingTime">Closing Time</string>
 </resources>

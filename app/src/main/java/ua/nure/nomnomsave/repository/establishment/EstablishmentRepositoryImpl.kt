@@ -21,8 +21,9 @@ import ua.nure.nomnomsave.repository.dto.EstablishmentDetailDto
 import ua.nure.nomnomsave.repository.dto.EstablishmentDetailPrivateDto
 import ua.nure.nomnomsave.repository.dto.EstablishmentListResponse
 import ua.nure.nomnomsave.repository.dto.EstablishmentResponse
+import ua.nure.nomnomsave.repository.dto.ProductTypesResponse
+import ua.nure.nomnomsave.repository.dto.CitiesResponse
 import ua.nure.nomnomsave.repository.dto.UpdateEstablishmentInput
-import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.safeCall
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -36,6 +37,75 @@ class EstablishmentRepositoryImpl(
         withContext(Dispatchers.IO) {
             safeCall<EstablishmentListResponse> {
                 httpClient.get("establishments")
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        val establishments = result.data.establishments
+                        dbRepository.db.establishedDao.insert(
+                            establishments.map { it.toEntity() }
+                        )
+                        Result.Success(establishments)
+                    }
+                    is Result.Error -> result
+                }
+            }
+        }
+
+    override suspend fun getProductTypes(): Result<Map<String, String>, DataError> =
+        withContext(Dispatchers.IO) {
+            safeCall<ProductTypesResponse> {
+                httpClient.get("metadata/product-types")
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        Result.Success(result.data.productTypes.associate { it.id to it.name })
+                    }
+                    is Result.Error -> result
+                }
+            }
+        }
+
+    override suspend fun getCities(): Result<List<String>, DataError> =
+        withContext(Dispatchers.IO) {
+            safeCall<CitiesResponse> {
+                httpClient.get("establishments/cities")
+            }.let { result ->
+                when (result) {
+                    is Result.Success -> {
+                        Result.Success(result.data.cities)
+                    }
+                    is Result.Error -> result
+                }
+            }
+        }
+
+    override suspend fun getFilteredEstablishments(
+        city: String?,
+        lat: Double?,
+        lon: Double?,
+        radius: Double?,
+        minRating: Float?,
+        productTypeIds: List<String>?,
+        sortBy: String,
+        sortOrder: String,
+    ): Result<List<EstablishmentDetailDto>, DataError> =
+        withContext(Dispatchers.IO) {
+            val params = mutableListOf<String>()
+            if (city != null) params.add("city=$city")
+            if (lat != null) params.add("lat=$lat")
+            if (lon != null) params.add("lon=$lon")
+            if (radius != null) params.add("radius=$radius")
+            if (minRating != null) params.add("minRating=$minRating")
+            if (productTypeIds != null && productTypeIds.isNotEmpty()) {
+                params.add("productTypeIds=${productTypeIds.joinToString(",")}")
+            }
+            params.add("sortBy=$sortBy")
+            params.add("sortOrder=$sortOrder")
+
+            val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+
+            safeCall<EstablishmentListResponse> {
+                httpClient.get("establishments$queryString")
             }.let { result ->
                 when (result) {
                     is Result.Success -> {
