@@ -3,9 +3,12 @@ package ua.nure.nomnomsave.ui.list.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -24,19 +27,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.ui.compose.NNSButton
-import ua.nure.nomnomsave.ui.list.List
+import ua.nure.nomnomsave.ui.list.ListContract
 import ua.nure.nomnomsave.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FiltersBottomSheet(
-    modifier: Modifier = Modifier,
-    pendingMaxDistanceKm: Float,
-    pendingMinRating: Float,
-    pendingTimeFilter: List.TimeFilterOption?,
+    pendingMaxDistanceKm: Float?,
+    pendingMinRating: Float?,
+    pendingTimeFilter: ListContract.TimeFilterOption?,
+    pendingCity: String? = null,
+    pendingProductTypes: List<String> = emptyList(),
+    availableCities: List<String> = emptyList(),
+    availableProductTypes: Map<String, String> = emptyMap(),
+    hasUserLocation: Boolean = false,
     onDistanceChange: (Float) -> Unit,
     onRatingChange: (Float) -> Unit,
-    onTimeFilterChange: (List.TimeFilterOption) -> Unit,
+    onTimeFilterChange: (ListContract.TimeFilterOption) -> Unit,
+    onCityChange: (String) -> Unit = {},
+    onProductTypesChange: (List<String>) -> Unit = {},
     onApply: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -45,100 +54,151 @@ fun FiltersBottomSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = AppTheme.color.background,
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AppTheme.dimension.normal)
-                .padding(bottom = AppTheme.dimension.normal),
+                .sizeIn(maxHeight = 500.dp)
+                .padding(horizontal = AppTheme.dimension.normal),
+            contentPadding = PaddingValues(bottom = AppTheme.dimension.normal),
             verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.normal)
         ) {
-            Text(
-                text = stringResource(R.string.filters),
-                style = AppTheme.typography.large.copy(fontWeight = FontWeight.Bold),
-            )
-
-            FilterSectionLabel(
-                label = stringResource(R.string.distance),
-                valueLabel = stringResource(R.string.filterUpToKm, pendingMaxDistanceKm.toInt())
-            )
-            Slider(
-                modifier = Modifier.fillMaxWidth(),
-                value = pendingMaxDistanceKm,
-                onValueChange = onDistanceChange,
-                valueRange = 1f..10f,
-                colors = SliderDefaults.colors(
-                    thumbColor = AppTheme.color.active,
-                    activeTrackColor = AppTheme.color.active,
-                    inactiveTrackColor = AppTheme.color.grey.copy(alpha = 0.3f),
-                )
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            item {
                 Text(
-                    text = stringResource(R.string.filter1km),
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
-                )
-                Text(
-                    text = stringResource(R.string.filter10km),
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
+                    text = stringResource(R.string.filters),
+                    style = AppTheme.typography.large.copy(fontWeight = FontWeight.Bold),
                 )
             }
 
-            FilterSectionLabel(
-                label = stringResource(R.string.rating),
-                valueLabel = null
-            )
-            Slider(
-                modifier = Modifier.fillMaxWidth(),
-                value = pendingMinRating,
-                onValueChange = onRatingChange,
-                valueRange = 1f..5f,
-                colors = SliderDefaults.colors(
-                    thumbColor = AppTheme.color.active,
-                    activeTrackColor = AppTheme.color.active,
-                    inactiveTrackColor = AppTheme.color.grey.copy(alpha = 0.3f),
-                )
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(R.string.filter1star),
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
-                )
-                Text(
-                    text = stringResource(R.string.filter5star),
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
-                )
-            }
-
-            Text(
-                text = stringResource(R.string.filterTimeUntilClosing),
-                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold)
-            )
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
-            ) {
-                List.TimeFilterOption.entries.forEach { option ->
-                    TimeFilterChip(
-                        label = option.label,
-                        selected = pendingTimeFilter == option,
-                        onClick = { onTimeFilterChange(option) }
+            item {
+                //City
+                Column(verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)) {
+                    FilterSectionLabel(
+                        label = stringResource(R.string.city),
+                        valueLabel = null
                     )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
+                    ) {
+                        availableCities.forEach { city ->
+                            TimeFilterChip(
+                                label = city,
+                                selected = pendingCity == city,
+                                onClick = { onCityChange(city) }
+                            )
+                        }
+                    }
                 }
             }
 
-            NNSButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = AppTheme.dimension.small),
-                text = stringResource(R.string.saveChanges),
-            ) {
-                onApply()
+            item {
+                //Distance
+                Column(verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)) {
+                    FilterSectionLabel(
+                        label = stringResource(R.string.distance),
+                        valueLabel = if (pendingMaxDistanceKm != null) {
+                            stringResource(R.string.filterUpToKm, pendingMaxDistanceKm.toInt())
+                        } else null
+                    )
+                    Slider(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = pendingMaxDistanceKm ?: 1f,
+                        onValueChange = onDistanceChange,
+                        valueRange = 1f..10f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = AppTheme.color.active,
+                            activeTrackColor = AppTheme.color.active,
+                            inactiveTrackColor = AppTheme.color.grey.copy(alpha = 0.3f),
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = stringResource(R.string.filter1km),
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
+                        )
+                        Text(
+                            text = stringResource(R.string.filter10km),
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
+                        )
+                    }
+                }
+            }
+
+            item {
+                //Rating
+                Column(verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)) {
+                    FilterSectionLabel(
+                        label = stringResource(R.string.rating),
+                        valueLabel = null
+                    )
+                    Slider(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = pendingMinRating ?: 1f,
+                        onValueChange = onRatingChange,
+                        valueRange = 1f..5f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = AppTheme.color.active,
+                            activeTrackColor = AppTheme.color.active,
+                            inactiveTrackColor = AppTheme.color.grey.copy(alpha = 0.3f),
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = stringResource(R.string.filter1star),
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
+                        )
+                        Text(
+                            text = stringResource(R.string.filter5star),
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
+                        )
+                    }
+                }
+            }
+
+            item {
+                //Product types
+                Column(verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)) {
+                    Text(
+                        text = stringResource(R.string.productTypes),
+                        style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
+                    ) {
+                        availableProductTypes.forEach { (id, name) ->
+                            TimeFilterChip(
+                                label = name,
+                                selected = id in pendingProductTypes,
+                                onClick = {
+                                    val updated = if (id in pendingProductTypes) {
+                                        pendingProductTypes - id
+                                    } else {
+                                        pendingProductTypes + id
+                                    }
+                                    onProductTypesChange(updated)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                NNSButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = AppTheme.dimension.small),
+                    text = stringResource(R.string.saveChanges),
+                ) {
+                    onApply()
+                }
             }
         }
     }
@@ -197,10 +257,20 @@ private fun FiltersBottomSheetPreview() {
         FiltersBottomSheet(
             pendingMaxDistanceKm = 8f,
             pendingMinRating = 3f,
-            pendingTimeFilter = List.TimeFilterOption.WITHIN_1_HOUR,
+            pendingTimeFilter = ListContract.TimeFilterOption.WITHIN_1_HOUR,
+            pendingCity = "Kyiv",
+            pendingProductTypes = emptyList(),
+            availableCities = listOf("Kyiv", "Lviv", "Odesa"),
+            availableProductTypes = mapOf(
+                "type1" to "Vegetables",
+                "type2" to "Fruits"
+            ),
+            hasUserLocation = true,
             onDistanceChange = {},
             onRatingChange = {},
             onTimeFilterChange = {},
+            onCityChange = {},
+            onProductTypesChange = {},
             onApply = {},
             onDismiss = {}
         )

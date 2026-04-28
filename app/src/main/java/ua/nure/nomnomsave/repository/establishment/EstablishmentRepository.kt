@@ -9,8 +9,22 @@ import ua.nure.nomnomsave.repository.dto.EstablishmentDetailPrivateDto
 import ua.nure.nomnomsave.repository.dto.UpdateEstablishmentInput
 
 interface EstablishmentRepository {
-    // Remote operations
     suspend fun getAllEstablishments(): Result<List<EstablishmentDetailDto>, DataError>
+
+    suspend fun getProductTypes(): Result<Map<String, String>, DataError>
+    
+    suspend fun getCities(): Result<List<String>, DataError>
+
+    suspend fun getFilteredEstablishments(
+        city: String? = null,
+        lat: Double? = null,
+        lon: Double? = null,
+        radius: Double? = null,
+        minRating: Float? = null,
+        productTypeIds: List<String>? = null,
+        sortBy: String = "distance",
+        sortOrder: String = "ASC",
+    ): Result<List<EstablishmentDetailDto>, DataError>
 
     suspend fun getEstablishmentsByCity(city: String): Result<List<EstablishmentDetailDto>, DataError>
 
@@ -28,7 +42,7 @@ interface EstablishmentRepository {
         updateData: UpdateEstablishmentInput,
     ): Result<EstablishmentDetailPrivateDto, DataError>
 
-    // Local operations
+    //Local
     fun getAllEstablishmentsFlow(): Flow<List<EstablishmentEntity>>
 
     fun getEstablishmentByIdFlow(id: String): Flow<EstablishmentEntity?>
