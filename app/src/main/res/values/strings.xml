@@ -80,7 +80,7 @@
     <string name="filters">Filters</string>
     <string name="filterUpToKm">Up to %1$d km</string>
     <string name="filter1km">1 km</string>
-    <string name="filter10km">10 km</string>
+    <string name="filter50km">50 km</string>
     <string name="filter1star">1+</string>
     <string name="filter5star">5</string>
     <string name="maps">Map</string>

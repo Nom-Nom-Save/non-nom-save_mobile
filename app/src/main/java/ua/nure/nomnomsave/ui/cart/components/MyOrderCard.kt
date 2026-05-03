@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,30 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun MyOrderCard(
+    modifier: Modifier = Modifier,
+    order: Order,
+    onQR: () -> Unit = {},
+    onDelete: () -> Unit = {},
+) {
+    if (order.details.size == 1) {
+        CompactMyOrderCard(
+            modifier = modifier,
+            order = order,
+            onQR = onQR,
+            onDelete = onDelete
+        )
+    } else {
+        ExpandedMyOrderCard(
+            modifier = modifier,
+            order = order,
+            onQR = onQR,
+            onDelete = onDelete
+        )
+    }
+}
+
+@Composable
+private fun CompactMyOrderCard(
     modifier: Modifier = Modifier,
     order: Order,
     onQR: () -> Unit = {},
@@ -122,9 +147,7 @@ fun MyOrderCard(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                    }
 
-                    if (entity.orderStatus == OrderStatus.Reserved) {
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
@@ -147,17 +170,145 @@ fun MyOrderCard(
     }
 }
 
-private fun formatExpiresAt(dateTime: LocalDateTime): String {
-    return try {
-        dateTime.format(DateTimeFormatter.ofPattern("h a"))
-    } catch (e: Exception) {
-        ""
+@Composable
+private fun ExpandedMyOrderCard(
+    modifier: Modifier = Modifier,
+    order: Order,
+    onQR: () -> Unit = {},
+    onDelete: () -> Unit = {},
+) {
+    val entity = order.orderEntity
+    val totalPrice = order.details.sumOf { it.price * it.quantity }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppTheme.dimension.small))
+            .background(AppTheme.color.cardBackground)
+    ) {
+        order.details.forEachIndexed { index, detail ->
+            val isLast = index == order.details.lastIndex
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppTheme.dimension.small),
+                horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    model = detail.itemPicture,
+                    contentDescription = detail.itemName,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
+                    error = painterResource(R.drawable.placeholder_image),
+                    placeholder = painterResource(R.drawable.placeholder_image),
+                )
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = detail.itemName,
+                            style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "${detail.weight} g",
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                        )
+                    }
+
+                    entity.expiresAt?.let { expiresAt ->
+                        val formatted = formatExpiresAt(expiresAt)
+                        Text(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .border(1.dp, AppTheme.color.grey, RoundedCornerShape(50.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                            text = "Collect till $formatted",
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = entity.establishmentAddress,
+                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        if (isLast && entity.orderStatus == OrderStatus.Reserved) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                IconButton(
+                                    modifier = Modifier.size(32.dp),
+                                    onClick = onDelete
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.trash),
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xFF2D6A4F))
+                                        .clickable { onQR() },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.qr_code),
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.small)
+                .padding(bottom = AppTheme.dimension.small),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Text(
+                text = String.format("$%.0f", totalPrice),
+                style = AppTheme.typography.large.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.color.active
+                ),
+            )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun MyOrderCardPreview() {
+private fun MyOrderCardCompactPreview() {
     AppTheme {
         Box(
             modifier = Modifier
@@ -191,5 +342,59 @@ private fun MyOrderCardPreview() {
                 )
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MyOrderCardExpandedPreview() {
+    AppTheme {
+        Box(
+            modifier = Modifier
+                .background(AppTheme.color.background)
+                .padding(16.dp)
+        ) {
+            MyOrderCard(
+                order = Order(
+                    orderEntity = OrderEntity(
+                        id = "2",
+                        userId = "u1",
+                        totalPrice = 95.0,
+                        orderStatus = OrderStatus.Reserved,
+                        qrCodeData = "qr",
+                        expiresAt = LocalDateTime.now().plusHours(2),
+                        establishmentName = "Golden Bakery",
+                        establishmentAddress = "81 Sumska St, Kharkiv, Ukraine",
+                        establishmentLogo = "",
+                        totalOrderWeight = 270,
+                        allergens = emptyList(),
+                    ),
+                    details = listOf(
+                        OrderDetailsEntity(
+                            id = "d1", orderId = "2", menuPriceId = "m1",
+                            quantity = 1, price = 45.0, originalPrice = 45.0,
+                            discountPrice = 0.0, itemName = "Croissant",
+                            itemType = "pastry", itemPicture = null, weight = 120,
+                            minWeight = null, maxWeight = null
+                        ),
+                        OrderDetailsEntity(
+                            id = "d2", orderId = "2", menuPriceId = "m2",
+                            quantity = 1, price = 50.0, originalPrice = 50.0,
+                            discountPrice = 0.0, itemName = "Chocolate Muffin",
+                            itemType = "pastry", itemPicture = null, weight = 150,
+                            minWeight = null, maxWeight = null
+                        )
+                    )
+                )
+            )
+        }
+    }
+}
+
+private fun formatExpiresAt(dateTime: LocalDateTime): String {
+    return try {
+        dateTime.format(DateTimeFormatter.ofPattern("h a"))
+    } catch (e: Exception) {
+        ""
     }
 }

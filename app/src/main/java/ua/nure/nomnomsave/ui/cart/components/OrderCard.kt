@@ -40,13 +40,13 @@ import java.time.format.DateTimeFormatter
 fun OrderCard(
     modifier: Modifier = Modifier,
     order: Order,
+    errorMessage: String? = null,
     isFavorite: Boolean = false,
     onFavoriteClick: () -> Unit = {},
     onOrder: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
     val entity = order.orderEntity
-    val firstItem = order.details.firstOrNull()
 
     Column(
         modifier = modifier
@@ -66,10 +66,12 @@ fun OrderCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .clip(RoundedCornerShape(
-                        topStart = AppTheme.dimension.normal,
-                        topEnd = AppTheme.dimension.normal
-                    )),
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = AppTheme.dimension.normal,
+                            topEnd = AppTheme.dimension.normal
+                        )
+                    ),
                 placeholder = painterResource(R.drawable.placeholder_image),
                 error = painterResource(R.drawable.placeholder_image),
             )
@@ -135,71 +137,103 @@ fun OrderCard(
             maxLines = 1,
         )
 
-        AsyncImage(
-            model = firstItem?.itemPicture,
-            contentDescription = firstItem?.itemName,
-            contentScale = ContentScale.Crop,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
                 .padding(horizontal = AppTheme.dimension.normal)
                 .padding(top = AppTheme.dimension.small)
-                .clip(RoundedCornerShape(AppTheme.dimension.small)),
-            placeholder = painterResource(R.drawable.placeholder_image),
-            error = painterResource(R.drawable.placeholder_image),
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppTheme.dimension.normal)
-                .padding(top = AppTheme.dimension.small),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
         ) {
+            order.details.forEach { detail ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = AppTheme.dimension.extraSmall),
+                    horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = detail.itemPicture,
+                        contentDescription = detail.itemName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
+                        placeholder = painterResource(R.drawable.placeholder_image),
+                        error = painterResource(R.drawable.placeholder_image),
+                    )
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = detail.itemName,
+                                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = "${detail.weight} g",
+                                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                            )
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.extraSmall),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            entity.expiresAt?.let {
+                                OutlinedChip(
+                                    text = "Collect till ${formatTime(it)}",
+                                    borderColor = AppTheme.color.grey,
+                                    textColor = AppTheme.color.grey,
+                                )
+                            }
+                            if (entity.allergens.isNotEmpty()) {
+                                OutlinedChip(
+                                    text = "Allergens",
+                                    borderColor = AppTheme.color.error,
+                                    textColor = AppTheme.color.error,
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Quantity: ${detail.quantity}",
+                                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                            )
+                            Text(
+                                text = String.format("$%.0f", detail.price * detail.quantity),
+                                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (errorMessage != null) {
+            val formattedError = formatErrorMessage(errorMessage)
             Text(
-                text = firstItem?.itemName.orEmpty(),
-                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
-            )
-            Text(
-                text = "${entity.totalOrderWeight} g",
-                style = AppTheme.typography.regular.copy(color = AppTheme.color.grey),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.small),
+                text = formattedError,
+                style = AppTheme.typography.regular.copy(
+                    color = AppTheme.color.error,
+                ),
+                fontWeight = FontWeight.Normal
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppTheme.dimension.normal)
-                .padding(top = AppTheme.dimension.extraSmall),
-            horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            entity.expiresAt?.let {
-                OutlinedChip(
-                    text = "Collect till ${formatTime(it)}",
-                    borderColor = AppTheme.color.grey,
-                    textColor = AppTheme.color.grey,
-                )
-            }
-
-            if (entity.allergens.isNotEmpty()) {
-                OutlinedChip(
-                    text = "Allergens",
-                    borderColor = AppTheme.color.error,
-                    textColor = AppTheme.color.error,
-                )
-            }
-        }
-
-        Text(
-            modifier = Modifier
-                .padding(horizontal = AppTheme.dimension.normal)
-                .padding(top = 2.dp),
-            text = entity.establishmentAddress,
-            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-            maxLines = 1,
-        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -253,6 +287,22 @@ private fun formatTime(dateTime: LocalDateTime): String {
     }
 }
 
+private fun formatErrorMessage(errorMessage: String): String {
+    return when {
+        errorMessage.contains("currently closed", ignoreCase = true) ->
+            "This establishment is temporarily closed"
+        errorMessage.contains("not available", ignoreCase = true) ->
+            "This item is no longer available"
+        errorMessage.contains("out of stock", ignoreCase = true) ->
+            "Item is out of stock"
+        errorMessage.contains("expired", ignoreCase = true) ->
+            "This offer has expired"
+        errorMessage.contains("invalid", ignoreCase = true) ->
+            "Invalid request. Please try again"
+        else -> "$errorMessage"
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun OrderCardPreview() {
@@ -272,7 +322,7 @@ private fun OrderCardPreview() {
                         qrCodeData = "qr",
                         expiresAt = LocalDateTime.now().plusHours(1),
                         establishmentName = "Golden bakery",
-                        establishmentAddress = "Artisan Bakery",
+                        establishmentAddress = "81 Sumska St, Kharkiv, Ukraine",
                         establishmentLogo = "",
                         totalOrderWeight = 200,
                         allergens = listOf("Gluten", "Nuts"),

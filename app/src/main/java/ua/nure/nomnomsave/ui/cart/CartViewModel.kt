@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.config.qrCodeBitmapDefaultSize
+import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
@@ -80,13 +81,40 @@ class CartViewModel @Inject constructor(
                 }
             }
 
-            is Cart.Action.OnDeleteOrder -> cancelOrder(action.id)
+            is Cart.Action.OnShowDeleteOrderConfirmation -> {
+                _state.update { s -> s.copy(showDeleteOrderConfirmation = true, pendingDeleteOrderId = action.id) }
+            }
+
+            is Cart.Action.OnDismissDeleteConfirmation -> {
+                _state.update { s -> s.copy(showDeleteOrderConfirmation = false, pendingDeleteOrderId = null) }
+            }
+
+            is Cart.Action.OnConfirmDeleteOrder -> cancelOrder(action.id)
+
+            is Cart.Action.OnShowRemoveFromCartConfirmation -> {
+                _state.update { s -> s.copy(showRemoveFromCartConfirmation = true, pendingRemoveMenuPriceId = action.menuPriceId) }
+            }
+
+            is Cart.Action.OnDismissRemoveConfirmation -> {
+                _state.update { s -> s.copy(showRemoveFromCartConfirmation = false, pendingRemoveMenuPriceId = null) }
+            }
+
+            is Cart.Action.OnRemoveFromLocalCartConfirmed -> {
+                removeFromLocalCart(action.menuPriceId)
+                _state.update { s -> s.copy(showRemoveFromCartConfirmation = false, pendingRemoveMenuPriceId = null) }
+            }
+
             is Cart.Action.OnCreateOrder -> createOrderFromMenuItem(action.menuPriceId, action.quantity)
             is Cart.Action.OnAddToLocalCart -> addToLocalCart(action.item)
-            is Cart.Action.OnRemoveFromLocalCart -> removeFromLocalCart(action.menuPriceId)
+            is Cart.Action.OnRemoveFromLocalCart -> {
+                _state.update { s -> s.copy(showRemoveFromCartConfirmation = true, pendingRemoveMenuPriceId = action.menuPriceId) }
+            }
             is Cart.Action.OnOrderSingleItem -> submitSingleItem(action.menuPriceId, action.quantity)
             Cart.Action.OnSubmitLocalOrder -> submitLocalOrder()
             is Cart.Action.OnOrderAllFromEstablishment -> orderAllFromEstablishment(action.establishmentName)
+            is Cart.Action.OnDismissErrorDialog -> {
+                _state.update { s -> s.copy(showErrorDialog = false, errorMessage = null) }
+            }
         }
     }
 
@@ -130,7 +158,7 @@ class CartViewModel @Inject constructor(
                 
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
-                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                        is Result.Success -> {
                             Log.d(TAG, "Order submitted successfully: ${result.data.id}")
                             _state.update { s ->
                                 s.copy(
@@ -140,15 +168,16 @@ class CartViewModel @Inject constructor(
                             }
                             loadOrders()
                         }
-                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                        is Result.Error -> {
                             Log.e(TAG, "Failed to submit order: ${result.error}")
-                            _state.update { it.copy(inProgress = false) }
+                            val errorMessage = getErrorMessage(result.error)
+                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception: ${e.message}", e)
-                _state.update { it.copy(inProgress = false) }
+                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
             }
         }
     }
@@ -174,17 +203,18 @@ class CartViewModel @Inject constructor(
 
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
-                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                        is Result.Success -> {
                             _state.update { it.copy(inProgress = false, localCartItems = emptyList()) }
                             loadOrders()
                         }
-                        is ua.nure.nomnomsave.repository.Result.Error -> {
-                            _state.update { it.copy(inProgress = false) }
+                        is Result.Error -> {
+                            val errorMessage = getErrorMessage(result.error)
+                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
                         }
                     }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(inProgress = false) }
+                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
             }
         }
     }
@@ -198,7 +228,7 @@ class CartViewModel @Inject constructor(
                 }
 
                 _state.update { it.copy(inProgress = true) }
-                
+
                 val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
                     items = items.map { item ->
                         ua.nure.nomnomsave.repository.dto.OrderItemRequest(
@@ -210,7 +240,7 @@ class CartViewModel @Inject constructor(
 
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
-                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                        is Result.Success -> {
                             Log.d(TAG, "Order from establishment created successfully: ${result.data.id}")
                             _state.update { s ->
                                 s.copy(
@@ -220,15 +250,15 @@ class CartViewModel @Inject constructor(
                             }
                             loadOrders()
                         }
-                        is ua.nure.nomnomsave.repository.Result.Error -> {
-                            Log.e(TAG, "Failed to create order from establishment: ${result.error}")
-                            _state.update { it.copy(inProgress = false) }
+                        is Result.Error -> {
+                            val errorMessage = getErrorMessage(result.error)
+                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while creating order from establishment: ${e.message}", e)
-                _state.update { it.copy(inProgress = false) }
+                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
             }
         }
     }
@@ -236,19 +266,23 @@ class CartViewModel @Inject constructor(
     private fun cancelOrder(orderId: String) {
         viewModelScope.launch {
             try {
+                _state.update { it.copy(inProgress = true, showDeleteOrderConfirmation = false, pendingDeleteOrderId = null) }
                 orderRepository.cancelOrder(orderId).let { result ->
                     when (result) {
-                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                        is Result.Success -> {
                             Log.d(TAG, "Order cancelled successfully: $orderId")
+                            _state.update { it.copy(inProgress = false) }
                             loadOrders()
                         }
-                        is ua.nure.nomnomsave.repository.Result.Error -> {
-                            Log.e(TAG, "Failed to cancel order: ${result.error}")
+                        is Result.Error -> {
+                            val errorMessage = getErrorMessage(result.error)
+                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while cancelling order: ${e.message}", e)
+                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
             }
         }
     }
@@ -268,20 +302,21 @@ class CartViewModel @Inject constructor(
                 )
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
-                        is ua.nure.nomnomsave.repository.Result.Success -> {
+                        is Result.Success -> {
                             Log.d(TAG, "Order created successfully: ${result.data.id}")
                             _state.update { it.copy(inProgress = false) }
                             loadOrders()
                         }
-                        is ua.nure.nomnomsave.repository.Result.Error -> {
+                        is Result.Error -> {
                             Log.e(TAG, "Failed to create order: ${result.error}")
-                            _state.update { it.copy(inProgress = false) }
+                            val errorMessage = getErrorMessage(result.error)
+                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while creating order: ${e.message}", e)
-                _state.update { it.copy(inProgress = false) }
+                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
             }
         }
     }
@@ -326,4 +361,12 @@ class CartViewModel @Inject constructor(
             }
         }
     }
+
+    private fun getErrorMessage(error: ua.nure.nomnomsave.repository.Error): String {
+        return when (error) {
+            is DataError.ApiError -> error.message
+            else -> "An error occurred"
+        }
+    }
 }
+

@@ -27,7 +27,12 @@ object Cart {
         data class OnQueryChanged(val query: String) : Action
         data class OnQR(val data: String, val title: String?) : Action
         data class OnDismissQRCodeDialog(val state: Boolean) : Action
-        data class OnDeleteOrder(val id: String) : Action
+        data class OnShowDeleteOrderConfirmation(val id: String) : Action
+        data object OnDismissDeleteConfirmation : Action
+        data class OnConfirmDeleteOrder(val id: String) : Action
+        data class OnShowRemoveFromCartConfirmation(val menuPriceId: String) : Action
+        data object OnDismissRemoveConfirmation : Action
+        data class OnRemoveFromLocalCartConfirmed(val menuPriceId: String) : Action
         data class OnTabSelected(val tab: Tab) : Action
         data class OnCreateOrder(val menuPriceId: String, val quantity: Int) : Action
         data class OnAddToLocalCart(val item: LocalCartItem) : Action
@@ -35,6 +40,7 @@ object Cart {
         data class OnOrderSingleItem(val menuPriceId: String, val quantity: Int) : Action
         data object OnSubmitLocalOrder : Action
         data class OnOrderAllFromEstablishment(val establishmentName: String) : Action
+        data object OnDismissErrorDialog : Action
     }
 
     enum class Tab { ORDER, MY_ORDERS }
@@ -49,6 +55,12 @@ object Cart {
         val qrBitmap: Bitmap? = null,
         val selectedTab: Tab = Tab.ORDER,
         val userStats: UserStats? = null,
+        val showDeleteOrderConfirmation: Boolean = false,
+        val pendingDeleteOrderId: String? = null,
+        val showRemoveFromCartConfirmation: Boolean = false,
+        val pendingRemoveMenuPriceId: String? = null,
+        val errorMessage: String? = null,
+        val showErrorDialog: Boolean = false,
     )
 
     data class UserStats(

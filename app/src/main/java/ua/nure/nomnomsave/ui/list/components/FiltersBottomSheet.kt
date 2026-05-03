@@ -80,6 +80,13 @@ fun FiltersBottomSheet(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
                     ) {
+                        if (hasUserLocation) {
+                            TimeFilterChip(
+                                label = "My location",
+                                selected = pendingCity == "My location",
+                                onClick = { onCityChange("My location") }
+                            )
+                        }
                         availableCities.forEach { city ->
                             TimeFilterChip(
                                 label = city,
@@ -100,11 +107,23 @@ fun FiltersBottomSheet(
                             stringResource(R.string.filterUpToKm, pendingMaxDistanceKm.toInt())
                         } else null
                     )
+                    if (!hasUserLocation) {
+                        Text(
+                            text = "Location not available. Please select 'My location' above.",
+                            style = AppTheme.typography.small.copy(
+                                color = AppTheme.color.grey
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = AppTheme.dimension.small)
+                        )
+                    }
                     Slider(
                         modifier = Modifier.fillMaxWidth(),
                         value = pendingMaxDistanceKm ?: 1f,
                         onValueChange = onDistanceChange,
-                        valueRange = 1f..10f,
+                        valueRange = 1f..50f,
+                        enabled = hasUserLocation && pendingCity == "My location",
                         colors = SliderDefaults.colors(
                             thumbColor = AppTheme.color.active,
                             activeTrackColor = AppTheme.color.active,
@@ -120,7 +139,7 @@ fun FiltersBottomSheet(
                             style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
                         )
                         Text(
-                            text = stringResource(R.string.filter10km),
+                            text = stringResource(R.string.filter50km),
                             style = AppTheme.typography.small.copy(color = AppTheme.color.grey)
                         )
                     }
