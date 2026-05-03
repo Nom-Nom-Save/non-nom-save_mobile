@@ -1,7 +1,6 @@
 package ua.nure.nomnomsave.ui.cart
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +48,7 @@ import ua.nure.nomnomsave.repository.dto.OrderStatus
 import ua.nure.nomnomsave.ui.cart.components.MyOrderCard
 import ua.nure.nomnomsave.ui.cart.components.OrderCard
 import ua.nure.nomnomsave.ui.compose.NNSButton
+import ua.nure.nomnomsave.ui.compose.NNSConfirmationDialog
 import ua.nure.nomnomsave.ui.compose.NNSInputField
 import ua.nure.nomnomsave.ui.compose.NNSQRDialog
 import ua.nure.nomnomsave.ui.compose.NNSScreen
@@ -95,6 +95,42 @@ fun CartScreenContent(
                 title = state.qrCodeDialogTitle ?: "",
                 bitmap = state.qrBitmap ?: createBitmap(0, 0, Bitmap.Config.RGB_565),
                 onDismiss = { onAction(Cart.Action.OnDismissQRCodeDialog(state = false)) }
+            )
+        }
+
+        if (state.showDeleteOrderConfirmation) {
+            NNSConfirmationDialog(
+                title = "Cancel Order?",
+                message = "Are you sure you want to cancel this order? This action cannot be undone.",
+                confirmButtonText = "Cancel Order",
+                dismissButtonText = "Keep Order",
+                isDestructive = true,
+                onConfirm = {
+                    state.pendingDeleteOrderId?.let {
+                        onAction(Cart.Action.OnConfirmDeleteOrder(it))
+                    }
+                },
+                onDismiss = {
+                    onAction(Cart.Action.OnDismissDeleteConfirmation)
+                }
+            )
+        }
+
+        if (state.showRemoveFromCartConfirmation) {
+            NNSConfirmationDialog(
+                title = "Remove Item?",
+                message = "Are you sure you want to remove this item from your cart?",
+                confirmButtonText = "Remove",
+                dismissButtonText = "Keep",
+                isDestructive = true,
+                onConfirm = {
+                    state.pendingRemoveMenuPriceId?.let {
+                        onAction(Cart.Action.OnRemoveFromLocalCartConfirmed(it))
+                    }
+                },
+                onDismiss = {
+                    onAction(Cart.Action.OnDismissRemoveConfirmation)
+                }
             )
         }
     }
@@ -149,6 +185,13 @@ private fun OrderTabContent(
 ) {
     var search by remember { mutableStateOf(state.query) }
 
+    LaunchedEffect(state.showErrorDialog) {
+        if (state.showErrorDialog) {
+            kotlinx.coroutines.delay(5000)
+            onAction(Cart.Action.OnDismissErrorDialog)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -174,33 +217,38 @@ private fun OrderTabContent(
                 text = "Your Order (${state.localCartItems.size} items)",
                 style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
             )
-            
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = AppTheme.dimension.normal)
                     .padding(top = AppTheme.dimension.small),
+                verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
             ) {
                 val groupedByEstablishment = state.localCartItems.groupBy { it.establishmentName }
-                
+
                 groupedByEstablishment.forEach { (establishmentName, items) ->
                     item(key = establishmentName) {
-                        LocalOrderCard(
-                            establishmentName = establishmentName,
-                            establishmentLogo = items.first().establishmentLogo,
-                            establishmentBanner = items.first().establishmentBanner,
-                            items = items,
-                            onRemoveItem = { menuPriceId ->
-                                onAction(Cart.Action.OnRemoveFromLocalCart(menuPriceId))
-                            },
-                            onOrderItem = { menuPriceId, quantity ->
-                                onAction(Cart.Action.OnOrderSingleItem(menuPriceId, quantity))
-                            },
-                            onOrderAll = { establishment ->
-                                onAction(Cart.Action.OnOrderAllFromEstablishment(establishment))
-                            }
-                        )
+                        items.first().establishmentAddress?.let {
+                            CartItemGroupCard(
+                                establishmentName = establishmentName,
+                                establishmentAddress = it,
+                                establishmentLogo = items.first().establishmentLogo,
+                                establishmentBanner = items.first().establishmentBanner,
+                                items = items,
+                                errorMessage = if (state.showErrorDialog) state.errorMessage else null,
+                                onRemoveItem = { menuPriceId ->
+                                    onAction(Cart.Action.OnShowRemoveFromCartConfirmation(menuPriceId))
+                                },
+                                onOrderItem = { menuPriceId, quantity ->
+                                    onAction(Cart.Action.OnOrderSingleItem(menuPriceId, quantity))
+                                },
+                                onOrderAll = { establishment ->
+                                    onAction(Cart.Action.OnOrderAllFromEstablishment(establishment))
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -224,6 +272,7 @@ private fun OrderTabContent(
                 items(items = filtered, key = { it.orderEntity.id }) { order ->
                     OrderCard(
                         order = order,
+                        errorMessage = if (state.showErrorDialog) state.errorMessage else null,
                         onOrder = {
                             onAction(
                                 Cart.Action.OnQR(
@@ -232,7 +281,7 @@ private fun OrderTabContent(
                                 )
                             )
                         },
-                        onDelete = { onAction(Cart.Action.OnDeleteOrder(id = order.orderEntity.id)) }
+                        onDelete = { onAction(Cart.Action.OnShowDeleteOrderConfirmation(id = order.orderEntity.id)) }
                     )
                 }
             }
@@ -292,7 +341,7 @@ private fun MyOrdersTabContent(
                                 )
                             )
                         },
-                        onDelete = { onAction(Cart.Action.OnDeleteOrder(id = order.orderEntity.id)) }
+                        onDelete = { onAction(Cart.Action.OnShowDeleteOrderConfirmation(id = order.orderEntity.id)) }
                     )
                 }
             }
@@ -356,7 +405,6 @@ private fun UserStatsCard(
             )
             .padding(AppTheme.dimension.normal)
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -370,7 +418,7 @@ private fun UserStatsCard(
             )
             StatItem(
                 label = "Money saved",
-                value = String.format("%.2f ₴", totalSavings),
+                value = String.format("$%.0f", totalSavings),
                 modifier = Modifier.weight(1f)
             )
             StatItem(
@@ -431,27 +479,27 @@ private fun EmptyOrdersText(text: String) {
 private val Order.orderStatus get() = this.orderEntity.orderStatus
 
 @Composable
-private fun LocalOrderCard(
+private fun CartItemGroupCard(
     establishmentName: String,
+    establishmentAddress: String,
     establishmentLogo: String?,
     establishmentBanner: String?,
     items: List<LocalCartItem>,
+    errorMessage: String? = null,
     onRemoveItem: (String) -> Unit,
     onOrderItem: (String, Int) -> Unit = { _, _ -> },
     onOrderAll: (String) -> Unit = { }
 ) {
     val firstItem = items.firstOrNull()
-    val totalWeight = items.sumOf { it.detail.weight * it.detail.quantity }
     val totalPrice = items.sumOf { it.detail.price * it.detail.quantity }
     val allAllergens = items.flatMap { it.allergens }.distinct()
     val expiresAt = items.firstOrNull()?.expiresAt
-    val establishmentAddress = items.firstOrNull()?.establishmentAddress
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AppTheme.dimension.normal))
-            .background(AppTheme.color.background)
+            .background(AppTheme.color.cardBackground)
     ) {
         Box(
             modifier = Modifier
@@ -465,10 +513,12 @@ private fun LocalOrderCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .clip(RoundedCornerShape(
-                        topStart = AppTheme.dimension.normal,
-                        topEnd = AppTheme.dimension.normal
-                    )),
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = AppTheme.dimension.normal,
+                            topEnd = AppTheme.dimension.normal
+                        )
+                    ),
                 placeholder = painterResource(R.drawable.placeholder_image),
                 error = painterResource(R.drawable.placeholder_image),
             )
@@ -523,49 +573,129 @@ private fun LocalOrderCard(
             }
         }
 
-        if (!establishmentAddress.isNullOrBlank()) {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppTheme.dimension.normal)
-                    .padding(top = 2.dp),
-                text = establishmentAddress,
-                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                maxLines = 1,
-            )
-        }
+        Text(
+            modifier = Modifier
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = 2.dp),
+            text = establishmentAddress,
+            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+            maxLines = 1,
+        )
 
-        if (firstItem != null) {
-            AsyncImage(
-                model = firstItem.detail.itemPicture,
-                contentDescription = firstItem.detail.itemName,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .padding(horizontal = AppTheme.dimension.normal)
-                    .padding(top = AppTheme.dimension.small)
-                    .clip(RoundedCornerShape(AppTheme.dimension.small)),
-                placeholder = painterResource(R.drawable.placeholder_image),
-                error = painterResource(R.drawable.placeholder_image),
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = AppTheme.dimension.small)
+        ) {
+            items.forEachIndexed { index, item ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = AppTheme.dimension.extraSmall),
+                        horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = item.detail.itemPicture,
+                            contentDescription = item.detail.itemName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
+                            placeholder = painterResource(R.drawable.placeholder_image),
+                            error = painterResource(R.drawable.placeholder_image),
+                        )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppTheme.dimension.normal)
-                    .padding(top = AppTheme.dimension.small),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = firstItem.detail.itemName,
-                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
-                )
-                Text(
-                    text = "$totalWeight g",
-                    style = AppTheme.typography.regular.copy(color = AppTheme.color.grey),
-                )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = item.detail.itemName,
+                                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                                    maxLines = 1,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "${item.detail.weight} g",
+                                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                                )
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.extraSmall),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                expiresAt?.let {
+                                    OutlinedChip(
+                                        text = "Collect till ${formatTime(it)}",
+                                        borderColor = AppTheme.color.grey,
+                                        textColor = AppTheme.color.grey,
+                                    )
+                                }
+                                if (item.allergens.isNotEmpty()) {
+                                    OutlinedChip(
+                                        text = "Allergens",
+                                        borderColor = AppTheme.color.error,
+                                        textColor = AppTheme.color.error,
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Quantity: ${item.detail.quantity}",
+                                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                                )
+                                Text(
+                                    text = String.format("$%.0f", item.detail.price * item.detail.quantity),
+                                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = AppTheme.dimension.small),
+                        horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            modifier = Modifier.size(36.dp),
+                            onClick = { onRemoveItem(item.detail.menuPriceId) }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.trash),
+                                contentDescription = null,
+                                tint = AppTheme.color.error,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        NNSButton(
+                            modifier = Modifier.weight(1f),
+                            text = "Order",
+                            onClick = { onOrderItem(item.detail.menuPriceId, item.detail.quantity) }
+                        )
+                    }
+                }
+
+                if (index < items.size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(bottom = AppTheme.dimension.small),
+                        color = AppTheme.color.background
+                    )
+                }
             }
         }
 
@@ -573,113 +703,41 @@ private fun LocalOrderCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = AppTheme.dimension.normal)
-                .padding(top = AppTheme.dimension.extraSmall),
-            horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+                .padding(top = AppTheme.dimension.small),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            expiresAt?.let {
-                OutlinedChip(
-                    text = "Collect till ${formatTime(it)}",
-                    borderColor = AppTheme.color.grey,
-                    textColor = AppTheme.color.grey,
-                )
-            }
-
-            if (allAllergens.isNotEmpty()) {
-                OutlinedChip(
-                    text = "Allergens",
-                    borderColor = AppTheme.color.error,
-                    textColor = AppTheme.color.error,
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppTheme.dimension.normal)
-                .padding(top = AppTheme.dimension.normal),
-        ) {
-            items.forEachIndexed { index, item ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = AppTheme.dimension.small),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = item.detail.itemName,
-                            style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
-                        )
-                        Text(
-                            text = "Qty: ${item.detail.quantity} × ${String.format("%.2f", item.detail.price)} ₴",
-                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                        )
-                    }
-                    
-                    Text(
-                        text = String.format("%.2f", item.detail.price * item.detail.quantity) + " ₴",
-                        style = AppTheme.typography.small.copy(fontWeight = FontWeight.SemiBold),
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = AppTheme.dimension.small),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        modifier = Modifier.size(36.dp),
-                        onClick = { onRemoveItem(item.detail.menuPriceId) }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.trash),
-                            contentDescription = null,
-                            tint = AppTheme.color.error,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    NNSButton(
-                        modifier = Modifier.weight(1f),
-                        text = "Order",
-                        onClick = { 
-                            Log.d("CartScreen", "Order button clicked for: ${item.detail.itemName}, menuPriceId: ${item.detail.menuPriceId}, quantity: ${item.detail.quantity}")
-                            onOrderItem(item.detail.menuPriceId, item.detail.quantity) 
-                        }
-                    )
-                }
-                
-                if (index < items.size - 1) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = AppTheme.dimension.small),
-                        color = AppTheme.color.background
-                    )
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppTheme.dimension.normal)
-                .padding(top = AppTheme.dimension.normal),
-            verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
-        ) {
             Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Total: ${String.format("%.2f", totalPrice)} ₴",
-                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold, color = AppTheme.color.active),
+                text = "Total:",
+                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
             )
+            Text(
+                text = String.format("$%.0f", totalPrice),
+                style = AppTheme.typography.large.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.color.active
+                ),
+            )
+        }
 
-            NNSButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Order All from ${establishmentName}",
-                onClick = { onOrderAll(establishmentName) }
+        NNSButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimension.normal)
+                .padding(top = AppTheme.dimension.small),
+            text = "Order All from $establishmentName",
+            onClick = { onOrderAll(establishmentName) }
+        )
+
+        if (errorMessage != null) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.dimension.normal)
+                    .padding(top = AppTheme.dimension.extraSmall),
+                text = errorMessage,
+                style = AppTheme.typography.small.copy(color = AppTheme.color.error),
+                textAlign = TextAlign.Center,
             )
         }
 

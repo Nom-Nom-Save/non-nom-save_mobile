@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.db.data.mappers.toEntity
+import ua.nure.nomnomsave.location.LocationService
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
 import ua.nure.nomnomsave.repository.onError
 import ua.nure.nomnomsave.repository.onSuccess
@@ -25,6 +26,7 @@ import javax.inject.Inject
 class ListViewModel @Inject constructor(
     private val establishmentRepository: EstablishmentRepository,
     private val userRepository: UserRepository,
+    private val locationService: LocationService,
 ) : ViewModel() {
     private val TAG by lazy { ListViewModel::class.simpleName }
 
@@ -40,6 +42,7 @@ class ListViewModel @Inject constructor(
         observeFavorites()
         loadProductTypes()
         loadCities()
+        requestUserLocation()
     }
 
     private var getFavoritesJob: Job? = null
@@ -217,7 +220,21 @@ class ListViewModel @Inject constructor(
                 val matchesRating = state.minRating?.let { minRating ->
                     entity.rating?.toFloatOrNull()?.let { it >= minRating } ?: true
                 } ?: true
-                matchesSearch && matchesRating
+                
+                val matchesDistance = if (state.selectedCity == "My location" &&
+                    state.userLat != null && state.userLon != null && state.maxDistanceKm != null) {
+                    val distance = calculateDistance(
+                        userLat = state.userLat,
+                        userLon = state.userLon,
+                        establishmentLat = entity.latitude?.toDoubleOrNull() ?: return@filter false,
+                        establishmentLon = entity.longitude?.toDoubleOrNull() ?: return@filter false
+                    )
+                    distance <= state.maxDistanceKm
+                } else {
+                    true
+                }
+                
+                matchesSearch && matchesRating && matchesDistance
             }
 
         val sorted = when (state.selectedSort) {
@@ -228,7 +245,25 @@ class ListViewModel @Inject constructor(
                     filtered.sortedByDescending { it.rating?.toFloatOrNull() ?: 0f }
                 }
             }
-            ListContract.SortOption.DISTANCE -> filtered
+            ListContract.SortOption.DISTANCE -> {
+                if (state.userLat != null && state.userLon != null) {
+                    val sorted = filtered.sortedBy { entity ->
+                        calculateDistance(
+                            userLat = state.userLat,
+                            userLon = state.userLon,
+                            establishmentLat = entity.latitude?.toDoubleOrNull() ?: Double.MAX_VALUE,
+                            establishmentLon = entity.longitude?.toDoubleOrNull() ?: Double.MAX_VALUE
+                        )
+                    }
+                    if (state.sortDirection == ListContract.SortDirection.DESCENDING) {
+                        sorted.reversed()
+                    } else {
+                        sorted
+                    }
+                } else {
+                    filtered
+                }
+            }
             ListContract.SortOption.CLOSING_TIME -> filtered
         }
 
@@ -240,16 +275,6 @@ class ListViewModel @Inject constructor(
         viewModelScope.launch {
             val s = _state.value
             _state.update { it.copy(isLoading = true) }
-
-            Log.d(TAG, "=== API Request ===")
-            Log.d(TAG, "City: ${if (s.selectedCity != "All cities" && s.selectedCity != "My location") s.selectedCity else "null (All cities)"}")
-            Log.d(TAG, "Lat: ${if (s.selectedCity == "My location") s.userLat else "null"}")
-            Log.d(TAG, "Lon: ${if (s.selectedCity == "My location") s.userLon else "null"}")
-            Log.d(TAG, "MinRating: ${s.minRating}")
-            Log.d(TAG, "Distance: ${s.maxDistanceKm}")
-            Log.d(TAG, "ProductTypes: ${s.selectedProductTypes}")
-            Log.d(TAG, "SortBy: ${s.selectedSort.backendValue}")
-            Log.d(TAG, "SortOrder: ${if (s.sortDirection == ListContract.SortDirection.ASCENDING) "ASC" else "DESC"}")
 
             establishmentRepository.getFilteredEstablishments(
                 city = if (s.selectedCity != "All cities" && s.selectedCity != "My location") s.selectedCity else null,
@@ -304,5 +329,52 @@ class ListViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun requestUserLocation() {
+        if (!locationService.hasLocationPermission()) {
+            Log.w(TAG, "Location permission not granted")
+            return
+        }
+
+        locationService.getLastKnownLocation()
+            .onEach { location ->
+                Log.d(TAG, "Location received: lat=${location.latitude}, lon=${location.longitude}")
+                _state.update { s ->
+                    s.copy(
+                        userLat = location.latitude,
+                        userLon = location.longitude
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+
+        locationService.getLocationUpdates()
+            .onEach { location ->
+                Log.d(TAG, "Location updated: lat=${location.latitude}, lon=${location.longitude}")
+                _state.update { s ->
+                    s.copy(
+                        userLat = location.latitude,
+                        userLon = location.longitude
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun calculateDistance(
+        userLat: Double,
+        userLon: Double,
+        establishmentLat: Double,
+        establishmentLon: Double
+    ): Float {
+        val earthRadius = 6371.0
+        val latDistance = Math.toRadians(establishmentLat - userLat)
+        val lonDistance = Math.toRadians(establishmentLon - userLon)
+        val a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                Math.cos(Math.toRadians(userLat)) * Math.cos(Math.toRadians(establishmentLat)) *
+                Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return (earthRadius * c).toFloat()
     }
 }
