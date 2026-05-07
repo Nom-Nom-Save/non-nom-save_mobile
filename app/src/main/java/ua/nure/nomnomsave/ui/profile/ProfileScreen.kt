@@ -113,33 +113,32 @@ fun ProfileScreenContent(
         AnimatedVisibility(
             visible = headerVisibility
         ) {
-            Box(
-                modifier = Modifier.padding(all = AppTheme.dimension.normal),
-                contentAlignment = Alignment.BottomEnd
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AsyncImage(
-                    modifier = Modifier
-                        .size(130.dp)
-                        .clip(shape = CircleShape)
-                        .border(width = 1.dp, color = AppTheme.color.active, shape = CircleShape),
-//                    model = state.profile?.avatarUrl,
-                    model = "https://avatarfiles.alphacoders.com/374/thumb-1920-374883.png",
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-//                Icon(
-//                    modifier = Modifier
-//                        .size(36.dp)
-//                        .clip(shape = CircleShape)
-//                        .background(color = AppTheme.color.active)
-//                        .padding(2.dp)
-//                        .clickable {
-//                            onAction(Profile.Action.OnShowChangeAvatarDialog)
-//                        },
-//                    painter = painterResource(R.drawable.edit_icon),
-//                    tint = AppTheme.color.background,
-//                    contentDescription = null
-//                )
+                Box(
+                    modifier = Modifier.padding(all = AppTheme.dimension.normal),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    AsyncImage(
+                        modifier = Modifier
+                            .size(130.dp)
+                            .clip(shape = CircleShape)
+                            .border(width = 1.dp, color = AppTheme.color.active, shape = CircleShape),
+                        model = "https://avatarfiles.alphacoders.com/374/thumb-1920-374883.png",
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                state.profile?.planName?.let { plan ->
+                    Text(
+                        modifier = Modifier.padding(vertical = AppTheme.dimension.small),
+                        text = plan,
+                        style = AppTheme.typography.small
+                    )
+                }
+
             }
         }
 
@@ -203,74 +202,80 @@ fun ProfileScreenContent(
                     .padding(horizontal = AppTheme.dimension.normal),
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(
-                    text = stringResource(R.string.notification),
-                    style = AppTheme.typography.small.copy(
-                        color = AppTheme.color.active
-                    ),
-                    modifier = Modifier
-                        .padding(
-                            top = AppTheme.dimension.normal,
-                            bottom = AppTheme.dimension.small
-                        )
-                        .padding(start = AppTheme.dimension.normal)
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = AppTheme.dimension.normal,
-                            vertical = AppTheme.dimension.small
-                        ),
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1F)
-                    ) {
+                when(state.profile?.planName) {
+                    "Free plan", null -> Unit
+                    else -> {
                         Text(
-                            text = stringResource(R.string.nearbyDeals),
-                            style = AppTheme.typography.regular
-                        )
-                        Text(
-                            text = stringResource(R.string.nearbyDealsDetails),
+                            text = stringResource(R.string.notification),
                             style = AppTheme.typography.small.copy(
-                                color = AppTheme.color.grey
+                                color = AppTheme.color.active
+                            ),
+                            modifier = Modifier
+                                .padding(
+                                    top = AppTheme.dimension.normal,
+                                    bottom = AppTheme.dimension.small
+                                )
+                                .padding(start = AppTheme.dimension.normal)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = AppTheme.dimension.normal,
+                                    vertical = AppTheme.dimension.small
+                                ),
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1F)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.nearbyDeals),
+                                    style = AppTheme.typography.regular
+                                )
+                                Text(
+                                    text = stringResource(R.string.nearbyDealsDetails),
+                                    style = AppTheme.typography.small.copy(
+                                        color = AppTheme.color.grey
+                                    )
+                                )
+                            }
+                            NNSSwitch(
+                                checked = state.nearbyDealsNotifications,
+                                onCheckChange = {
+                                    onAction(Profile.Action.OnNearbyDealsChange)
+                                }
                             )
-                        )
-                    }
-                    NNSSwitch(
-                        checked = state.nearbyDealsNotifications,
-                        onCheckChange = {
-                            onAction(Profile.Action.OnNearbyDealsChange)
                         }
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = AppTheme.dimension.normal,
-                            vertical = AppTheme.dimension.small
-                        ),) {
-                    Column(
-                        modifier = Modifier.weight(1F)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.closeTime),
-                            style = AppTheme.typography.regular
-                        )
-                        Text(
-                            text = stringResource(R.string.closeTimeDetails),
-                            style = AppTheme.typography.small.copy(
-                                color = AppTheme.color.grey
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = AppTheme.dimension.normal,
+                                    vertical = AppTheme.dimension.small
+                                ),) {
+                            Column(
+                                modifier = Modifier.weight(1F)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.closeTime),
+                                    style = AppTheme.typography.regular
+                                )
+                                Text(
+                                    text = stringResource(R.string.closeTimeDetails),
+                                    style = AppTheme.typography.small.copy(
+                                        color = AppTheme.color.grey
+                                    )
+                                )
+                            }
+                            NNSSwitch(
+                                checked = state.closedTimeNotifications,
+                                onCheckChange = {
+                                    onAction(Profile.Action.OnCloseTimeChange)
+                                }
                             )
-                        )
-                    }
-                    NNSSwitch(
-                        checked = state.closedTimeNotifications,
-                        onCheckChange = {
-                            onAction(Profile.Action.OnCloseTimeChange)
                         }
-                    )
+
+                    }
                 }
 
                 NNSButton(
@@ -292,7 +297,7 @@ fun ProfileScreenContent(
                             horizontal = AppTheme.dimension.normal,
                             vertical = AppTheme.dimension.large
                         ),
-                    text = stringResource(R.string.unlockPremium)
+                    text = stringResource(if(state.profile?.planName == "Free plan") R.string.unlockPremium else R.string.changePlan)
                 ) {
                     onAction(Profile.Action.OnUnlockPremium)
                 }

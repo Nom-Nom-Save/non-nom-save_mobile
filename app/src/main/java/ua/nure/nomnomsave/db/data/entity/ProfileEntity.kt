@@ -15,4 +15,7 @@ data class ProfileEntity (
     val isEmailVerified: Boolean,
     val createdAt: String,
     val isOwned: Boolean = false,
+    val status: String,
+    val planName: String,
+    val endDate: String
 )

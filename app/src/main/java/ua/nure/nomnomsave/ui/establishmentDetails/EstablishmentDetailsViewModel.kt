@@ -15,8 +15,10 @@ import ua.nure.nomnomsave.db.data.mappers.toEntity
 import ua.nure.nomnomsave.navigation.Screen
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
 import ua.nure.nomnomsave.repository.menu.MenuRepository
+import ua.nure.nomnomsave.repository.notification.NotificationRepository
 import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.review.ReviewRepository
+import ua.nure.nomnomsave.ui.establishmentDetails.EstablishmentDetails.Event.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,7 +26,8 @@ class EstablishmentDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: EstablishmentRepository,
     private val menuRepository: MenuRepository,
-    private val reviewRepository: ReviewRepository
+    private val reviewRepository: ReviewRepository,
+    private val notificationRepository: NotificationRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EstablishmentDetails.State())
@@ -78,7 +81,7 @@ class EstablishmentDetailsViewModel @Inject constructor(
                 _event.emit(EstablishmentDetails.Event.OnBack)
             }
             is EstablishmentDetails.Action.OnNavigate -> {
-                _event.emit(EstablishmentDetails.Event.OnNavigate(route = action.route))
+                _event.emit(OnNavigate(route = action.route))
             }
             is EstablishmentDetails.Action.OnOpenReviewSheet -> {
                 _state.update { it.copy(showReviewSheet = true, editingReview = action.review) }
@@ -111,10 +114,20 @@ class EstablishmentDetailsViewModel @Inject constructor(
                 reviewRepository.deleteReview(action.reviewId)
             }
             is EstablishmentDetails.Action.OnReserveNow -> {
-                _event.emit(EstablishmentDetails.Event.OnAddToCart(
-                    menuItem = action.menuItem,
-                    quantity = action.quantity
-                ))
+                _event.emit(
+                    OnAddToCart(
+                        menuItem = action.menuItem,
+                        quantity = action.quantity
+                    )
+                )
+            }
+
+            is EstablishmentDetails.Action.OnCreateExternalAction -> {
+                notificationRepository.showNotification(
+                    text = action.text,
+                    title = action.title,
+                    intent = action.intent
+                )
             }
         }
     }

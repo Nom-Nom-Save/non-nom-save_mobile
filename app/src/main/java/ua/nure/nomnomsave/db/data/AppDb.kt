@@ -31,7 +31,7 @@ import ua.nure.nomnomsave.db.data.entity.ReviewEntity
         MenuEntity::class,
         ReviewEntity::class
     ],
-    version = 9
+    version = 10
 )
 
 @TypeConverters(DbConverters::class)

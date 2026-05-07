@@ -1,6 +1,7 @@
 package ua.nure.nomnomsave
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,15 +17,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import ua.nure.nomnomsave.extention.toPushEvent
 import ua.nure.nomnomsave.navigation.NavGraph
 import ua.nure.nomnomsave.navigation.Screen
 import ua.nure.nomnomsave.navigation.topLevelRoutes
@@ -49,6 +56,14 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            intent?.toPushEvent()?.let {
+                PushEventChannel.send(event = it)
+                intent = null
+            }
+        }
+
         enableEdgeToEdge()
         
         if (ContextCompat.checkSelfPermission(
@@ -103,6 +118,23 @@ class MainActivity : ComponentActivity() {
                             .background(color = AppTheme.color.background),
                         contentAlignment = Alignment.Center
                     ) {
+
+                        LaunchedEffect(key1 = Unit) {
+
+                            navController.currentBackStackEntryFlow.first()
+
+                            PushEventChannel.receiveFlow()
+                                .distinctUntilChanged()
+                                .collect { event ->
+                                    navController.navigate(route = event.toScreen()) {
+                                        launchSingleTop = true
+                                        popUpTo(navController.graph.startDestinationId) {
+                                            saveState = false
+                                        }
+                                    }
+                                }
+                        }
+
                         NavGraph(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -112,6 +144,17 @@ class MainActivity : ComponentActivity() {
 
                     }
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        lifecycleScope.launch {
+            intent.toPushEvent()?.let {
+                PushEventChannel.send(event = it)
+                setIntent(null)
             }
         }
     }

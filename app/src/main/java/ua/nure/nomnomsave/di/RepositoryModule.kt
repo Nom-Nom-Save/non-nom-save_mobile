@@ -19,6 +19,8 @@ import ua.nure.nomnomsave.repository.establishment.EstablishmentRepository
 import ua.nure.nomnomsave.repository.establishment.EstablishmentRepositoryImpl
 import ua.nure.nomnomsave.repository.menu.MenuRepository
 import ua.nure.nomnomsave.repository.menu.MenuRepositoryImpl
+import ua.nure.nomnomsave.repository.notification.NotificationRepository
+import ua.nure.nomnomsave.repository.notification.NotificationRepositoryImpl
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.order.OrderRepositoryImpl
 import ua.nure.nomnomsave.repository.profile.ProfileRepository
@@ -142,5 +144,13 @@ object RepositoryModule {
         httpClient = httpClient,
         dbDeliveryDispatcher = dbDeliveryDispatcher,
         dbRepository = dbRepository
+    )
+
+    @Singleton
+    @Provides
+    fun provideNotificationRepository(
+        @ApplicationContext context: Context
+    ): NotificationRepository = NotificationRepositoryImpl(
+        context = context
     )
 }

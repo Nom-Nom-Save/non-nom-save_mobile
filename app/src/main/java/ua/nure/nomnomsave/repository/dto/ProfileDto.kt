@@ -22,4 +22,12 @@ data class ProfileDto(
     val successfulOrdersCount: Int = 0,
     val totalSavings: Double = 0.0,
     val totalOrderedItems: Int = 0,
+    val subscription: Subscription
+)
+
+@Serializable
+data class Subscription(
+    val status: String,
+    val planName: String,
+    val endDate: String
 )

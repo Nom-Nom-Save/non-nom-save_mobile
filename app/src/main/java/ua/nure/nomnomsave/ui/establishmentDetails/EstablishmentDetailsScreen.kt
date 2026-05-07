@@ -1,5 +1,7 @@
 package ua.nure.nomnomsave.ui.establishmentDetails
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,6 +60,10 @@ import ua.nure.nomnomsave.ui.compose.NNSReviewCard
 import ua.nure.nomnomsave.ui.compose.NNSScreen
 import ua.nure.nomnomsave.ui.theme.AppTheme
 import android.util.Log
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.platform.LocalContext
+import ua.nure.nomnomsave.MainActivity
 
 enum class DetailsTab {
     DETAILS, REVIEWS
@@ -79,23 +85,25 @@ fun EstablishmentDetailsScreen(
                 is EstablishmentDetails.Event.OnAddToCart -> {
                     val menuItem = it.menuItem
                     val establishment = state.establishment
-                    
+
                     val orderDetail = ua.nure.nomnomsave.db.data.entity.OrderDetailsEntity(
                         id = java.util.UUID.randomUUID().toString(),
                         orderId = "",
                         menuPriceId = menuItem.priceData?.id ?: "",
                         quantity = it.quantity,
-                        price = menuItem.priceData?.discountPrice ?: menuItem.priceData?.originalPrice ?: 0.0,
+                        price = menuItem.priceData?.discountPrice
+                            ?: menuItem.priceData?.originalPrice ?: 0.0,
                         originalPrice = menuItem.priceData?.originalPrice ?: 0.0,
                         discountPrice = menuItem.priceData?.discountPrice ?: 0.0,
                         itemName = menuItem.itemDetails?.name ?: "Unknown",
                         itemType = menuItem.itemType ?: "Product",
                         itemPicture = menuItem.itemDetails?.picture,
-                        weight = menuItem.itemDetails?.weightInfo?.filter { c -> c.isDigit() }?.toIntOrNull() ?: 0,
+                        weight = menuItem.itemDetails?.weightInfo?.filter { c -> c.isDigit() }
+                            ?.toIntOrNull() ?: 0,
                         minWeight = null,
                         maxWeight = null
                     )
-                    
+
                     val cartItem = ua.nure.nomnomsave.ui.cart.LocalCartItem(
                         detail = orderDetail,
                         establishmentName = establishment?.name ?: "Unknown",
@@ -105,7 +113,7 @@ fun EstablishmentDetailsScreen(
                         allergens = menuItem.itemDetails?.allergens ?: emptyList(),
                         expiresAt = java.time.LocalDateTime.now().plusHours(2)
                     )
-                    
+
                     cartViewModel.onAction(
                         ua.nure.nomnomsave.ui.cart.Cart.Action.OnAddToLocalCart(cartItem)
                     )
@@ -131,6 +139,8 @@ fun EstablishmentDetailsScreen(
 
     val myReview = remember(state.reviews) { state.reviews.find { it.isMyReview } }
     val isLimitReached = myReview != null && myReview.isEditable
+
+    val context = LocalContext.current
 
     NNSScreen {
         Box(
@@ -170,9 +180,17 @@ fun EstablishmentDetailsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(topStart = AppTheme.dimension.extralarge, topEnd = AppTheme.dimension.extralarge))
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = AppTheme.dimension.extralarge,
+                                topEnd = AppTheme.dimension.extralarge
+                            )
+                        )
                         .background(color = AppTheme.color.background)
-                        .padding(horizontal = AppTheme.dimension.normal, vertical = AppTheme.dimension.large)
+                        .padding(
+                            horizontal = AppTheme.dimension.normal,
+                            vertical = AppTheme.dimension.large
+                        )
                 ) {
 
                     Row(
@@ -260,7 +278,8 @@ fun EstablishmentDetailsScreen(
                                     url = menuItem.itemDetails?.picture ?: "",
                                     collectTill = menuItem.priceData?.endTime ?: "",
                                     allergens = !menuItem.itemDetails?.allergens.isNullOrEmpty(),
-                                    grams = menuItem.itemDetails?.weightInfo?.filter { it.isDigit() }?.toIntOrNull() ?: 0,
+                                    grams = menuItem.itemDetails?.weightInfo?.filter { it.isDigit() }
+                                        ?.toIntOrNull() ?: 0,
                                     picture = menuItem.itemDetails?.picture ?: ""
                                 )
                             }
@@ -289,10 +308,18 @@ fun EstablishmentDetailsScreen(
                                         isMyReview = review.isMyReview,
                                         isEditable = review.isEditable,
                                         onEdit = {
-                                            onAction(EstablishmentDetails.Action.OnOpenReviewSheet(review = review))
+                                            onAction(
+                                                EstablishmentDetails.Action.OnOpenReviewSheet(
+                                                    review = review
+                                                )
+                                            )
                                         },
                                         onDelete = {
-                                            onAction(EstablishmentDetails.Action.OnDeleteReview(review.id))
+                                            onAction(
+                                                EstablishmentDetails.Action.OnDeleteReview(
+                                                    review.id
+                                                )
+                                            )
                                         }
                                     )
                                 }
@@ -314,7 +341,10 @@ fun EstablishmentDetailsScreen(
             ) {
                 IconButton(
                     modifier = Modifier
-                        .background(color = AppTheme.color.background.copy(alpha = 0.7f), shape = CircleShape),
+                        .background(
+                            color = AppTheme.color.background.copy(alpha = 0.7f),
+                            shape = CircleShape
+                        ),
                     onClick = { onAction(EstablishmentDetails.Action.OnBack) }
                 ) {
                     Icon(
@@ -327,6 +357,33 @@ fun EstablishmentDetailsScreen(
                         contentDescription = null
                     )
                 }
+
+                Spacer(
+                    modifier = Modifier
+                        .height(AppTheme.dimension.iconSize)
+                        .weight(1F)
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            onAction(
+                                EstablishmentDetails.Action.OnCreateExternalAction(
+                                    text = "${state.establishment?.name} has new offer",
+                                    title = state.establishment?.name ?: "",
+                                    intent = PendingIntent.getActivity(
+                                        context,
+                                        1,
+                                        Intent(context, MainActivity::class.java).apply {
+//                                            putExtra("ACTION", "establishment_details")
+//                                            putExtra("ID", state.establishment?.id ?: "")
+                                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                        },
+                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                    )
+                                )
+                            )
+                        }
+                )
 
                 IconButton(
                     modifier = Modifier

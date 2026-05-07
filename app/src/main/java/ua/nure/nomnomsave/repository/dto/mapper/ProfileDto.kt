@@ -14,4 +14,8 @@ fun ProfileDto.toEntity() =
         notifyNewItems = notifyNewItems,
         isEmailVerified = isEmailVerified,
         createdAt = createdAt,
+        isOwned = true,
+        status = subscription.status,
+        planName = subscription.planName,
+        endDate = subscription.endDate,
     )

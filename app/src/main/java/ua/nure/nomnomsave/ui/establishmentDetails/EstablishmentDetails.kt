@@ -1,5 +1,6 @@
 package ua.nure.nomnomsave.ui.establishmentDetails
 
+import android.app.PendingIntent
 import android.view.Menu
 import ua.nure.nomnomsave.db.data.entity.EstablishmentEntity
 import ua.nure.nomnomsave.db.data.entity.MenuEntity
@@ -21,6 +22,7 @@ object EstablishmentDetails {
         data class OnSubmitReview(val rating: Int, val comment: String) : Action
         data class OnDeleteReview(val reviewId: String) : Action
         data class OnReserveNow(val menuItem: MenuEntity, val quantity: Int) : Action
+        data class OnCreateExternalAction(val text: String, val title: String, val intent: PendingIntent) : Action
     }
 
     data class State(
