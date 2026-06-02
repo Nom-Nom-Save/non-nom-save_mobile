@@ -40,21 +40,22 @@ fun MyOrderCard(
     modifier: Modifier = Modifier,
     order: Order,
     onQR: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onDeleteItem: (itemId: String) -> Unit = {},
+    onDeleteOrder: () -> Unit = {},
 ) {
     if (order.details.size == 1) {
         CompactMyOrderCard(
             modifier = modifier,
             order = order,
             onQR = onQR,
-            onDelete = onDelete
+            onDeleteItem = onDeleteItem,
         )
     } else {
         ExpandedMyOrderCard(
             modifier = modifier,
             order = order,
             onQR = onQR,
-            onDelete = onDelete
+            onDeleteItem = onDeleteItem,
         )
     }
 }
@@ -64,81 +65,85 @@ private fun CompactMyOrderCard(
     modifier: Modifier = Modifier,
     order: Order,
     onQR: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onDeleteItem: (itemId: String) -> Unit = {},
 ) {
     val entity = order.orderEntity
     val firstItem = order.details.firstOrNull()
+    val totalPrice = order.details.sumOf { it.price * it.quantity }
 
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AppTheme.dimension.small))
             .background(AppTheme.color.cardBackground)
-            .padding(AppTheme.dimension.small),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
     ) {
-        AsyncImage(
-            model = firstItem?.itemPicture,
-            contentDescription = firstItem?.itemName,
-            contentScale = ContentScale.Crop,
+        // Item Row
+        Row(
             modifier = Modifier
-                .size(64.dp)
-                .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
-            error = painterResource(R.drawable.placeholder_image),
-            placeholder = painterResource(R.drawable.placeholder_image),
-        )
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+                .fillMaxWidth()
+                .padding(AppTheme.dimension.small),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            AsyncImage(
+                model = firstItem?.itemPicture,
+                contentDescription = firstItem?.itemName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
+                error = painterResource(R.drawable.placeholder_image),
+                placeholder = painterResource(R.drawable.placeholder_image),
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = firstItem?.itemName.orEmpty(),
-                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = 1,
-                )
-                Text(
-                    text = "${entity.totalOrderWeight} g",
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                )
-            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = firstItem?.itemName.orEmpty(),
+                        style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = "${firstItem?.weight ?: 0} g",
+                        style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                    )
+                }
 
-            entity.expiresAt?.let { expiresAt ->
-                val formatted = formatExpiresAt(expiresAt)
-                Text(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50.dp))
-                        .border(1.dp, AppTheme.color.grey, RoundedCornerShape(50.dp))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                    text = "Collect till $formatted",
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                )
-            }
+                entity.expiresAt?.let { expiresAt ->
+                    val formatted = formatExpiresAt(expiresAt)
+                    Text(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50.dp))
+                            .border(1.dp, AppTheme.color.grey, RoundedCornerShape(50.dp))
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        text = "Collect till $formatted",
+                        style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                    )
+                }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = entity.establishmentAddress,
-                    style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                    maxLines = 1,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = entity.establishmentAddress,
+                        style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (entity.orderStatus == OrderStatus.Reserved) {
                         IconButton(
                             modifier = Modifier.size(32.dp),
-                            onClick = onDelete
+                            onClick = { firstItem?.id?.let { onDeleteItem(it) } }
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.trash),
@@ -147,24 +152,58 @@ private fun CompactMyOrderCard(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFF2D6A4F))
-                                .clickable { onQR() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.qr_code),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
                     }
                 }
+            }
+        }
+
+        // Footer with QR and Price
+        if (entity.orderStatus == OrderStatus.Reserved) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppTheme.dimension.small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF2D6A4F))
+                        .clickable { onQR() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.qr_code),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Text(
+                    text = String.format("$%.0f", totalPrice),
+                    style = AppTheme.typography.large.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.color.active
+                    ),
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppTheme.dimension.small),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = String.format("$%.0f", totalPrice),
+                    style = AppTheme.typography.large.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.color.active
+                    ),
+                )
             }
         }
     }
@@ -175,7 +214,7 @@ private fun ExpandedMyOrderCard(
     modifier: Modifier = Modifier,
     order: Order,
     onQR: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onDeleteItem: (itemId: String) -> Unit = {},
 ) {
     val entity = order.orderEntity
     val totalPrice = order.details.sumOf { it.price * it.quantity }
@@ -187,76 +226,76 @@ private fun ExpandedMyOrderCard(
             .background(AppTheme.color.cardBackground)
     ) {
         order.details.forEachIndexed { index, detail ->
-            val isLast = index == order.details.lastIndex
-
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(AppTheme.dimension.small),
-                horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(AppTheme.dimension.small)
             ) {
-                AsyncImage(
-                    model = detail.itemPicture,
-                    contentDescription = detail.itemName,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
-                    error = painterResource(R.drawable.placeholder_image),
-                    placeholder = painterResource(R.drawable.placeholder_image),
-                )
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    AsyncImage(
+                        model = detail.itemPicture,
+                        contentDescription = detail.itemName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(AppTheme.dimension.extraSmall)),
+                        error = painterResource(R.drawable.placeholder_image),
+                        placeholder = painterResource(R.drawable.placeholder_image),
+                    )
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = detail.itemName,
-                            style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
-                            maxLines = 1,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = "${detail.weight} g",
-                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                        )
-                    }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = detail.itemName,
+                                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = "${detail.weight} g",
+                                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                            )
+                        }
 
-                    entity.expiresAt?.let { expiresAt ->
-                        val formatted = formatExpiresAt(expiresAt)
-                        Text(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50.dp))
-                                .border(1.dp, AppTheme.color.grey, RoundedCornerShape(50.dp))
-                                .padding(horizontal = 8.dp, vertical = 2.dp),
-                            text = "Collect till $formatted",
-                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                        )
-                    }
+                        entity.expiresAt?.let { expiresAt ->
+                            val formatted = formatExpiresAt(expiresAt)
+                            Text(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50.dp))
+                                    .border(1.dp, AppTheme.color.grey, RoundedCornerShape(50.dp))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                                text = "Collect till $formatted",
+                                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                            )
+                        }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = entity.establishmentAddress,
-                            style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
-                            maxLines = 1,
-                            modifier = Modifier.weight(1f)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = entity.establishmentAddress,
+                                style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
 
-                        if (isLast && entity.orderStatus == OrderStatus.Reserved) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (entity.orderStatus == OrderStatus.Reserved) {
                                 IconButton(
                                     modifier = Modifier.size(32.dp),
-                                    onClick = onDelete
+                                    onClick = { onDeleteItem(detail.id) }
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.trash),
@@ -265,43 +304,71 @@ private fun ExpandedMyOrderCard(
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color(0xFF2D6A4F))
-                                        .clickable { onQR() },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.qr_code),
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
                             }
                         }
                     }
                 }
             }
+
+            if (index < order.details.lastIndex) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppTheme.dimension.small)
+                        .height(1.dp)
+                        .background(AppTheme.color.grey.copy(alpha = 0.2f))
+                )
+            }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppTheme.dimension.small)
-                .padding(bottom = AppTheme.dimension.small),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text(
-                text = String.format("$%.0f", totalPrice),
-                style = AppTheme.typography.large.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = AppTheme.color.active
-                ),
-            )
+        // Footer with QR and Total Price
+        if (entity.orderStatus == OrderStatus.Reserved) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppTheme.dimension.small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFF2D6A4F))
+                        .clickable { onQR() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.qr_code),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Text(
+                    text = String.format("$%.0f", totalPrice),
+                    style = AppTheme.typography.large.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.color.active
+                    ),
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppTheme.dimension.small),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = String.format("$%.0f", totalPrice),
+                    style = AppTheme.typography.large.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.color.active
+                    ),
+                )
+            }
         }
     }
 }

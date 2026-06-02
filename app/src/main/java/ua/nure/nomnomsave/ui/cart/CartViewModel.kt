@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.config.qrCodeBitmapDefaultSize
-import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
@@ -154,8 +153,6 @@ class CartViewModel @Inject constructor(
                     )
                 )
                 
-                Log.d("CartViewModel", "DEBUG submitSingleItem: request=$createOrderRequest")
-                
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
                         is Result.Success -> {
@@ -170,14 +167,13 @@ class CartViewModel @Inject constructor(
                         }
                         is Result.Error -> {
                             Log.e(TAG, "Failed to submit order: ${result.error}")
-                            val errorMessage = getErrorMessage(result.error)
-                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
+                            _state.update { it.copy(inProgress = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception: ${e.message}", e)
-                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
+                _state.update { it.copy(inProgress = false) }
             }
         }
     }
@@ -208,13 +204,12 @@ class CartViewModel @Inject constructor(
                             loadOrders()
                         }
                         is Result.Error -> {
-                            val errorMessage = getErrorMessage(result.error)
-                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
+                            _state.update { it.copy(inProgress = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
+                _state.update { it.copy(inProgress = false) }
             }
         }
     }
@@ -251,14 +246,13 @@ class CartViewModel @Inject constructor(
                             loadOrders()
                         }
                         is Result.Error -> {
-                            val errorMessage = getErrorMessage(result.error)
-                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
+                            _state.update { it.copy(inProgress = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while creating order from establishment: ${e.message}", e)
-                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
+                _state.update { it.copy(inProgress = false) }
             }
         }
     }
@@ -275,14 +269,13 @@ class CartViewModel @Inject constructor(
                             loadOrders()
                         }
                         is Result.Error -> {
-                            val errorMessage = getErrorMessage(result.error)
-                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
+                            _state.update { it.copy(inProgress = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while cancelling order: ${e.message}", e)
-                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
+                _state.update { it.copy(inProgress = false) }
             }
         }
     }
@@ -309,14 +302,13 @@ class CartViewModel @Inject constructor(
                         }
                         is Result.Error -> {
                             Log.e(TAG, "Failed to create order: ${result.error}")
-                            val errorMessage = getErrorMessage(result.error)
-                            _state.update { it.copy(inProgress = false, errorMessage = errorMessage, showErrorDialog = true) }
+                            _state.update { it.copy(inProgress = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while creating order: ${e.message}", e)
-                _state.update { it.copy(inProgress = false, errorMessage = e.message ?: "Unknown error", showErrorDialog = true) }
+                _state.update { it.copy(inProgress = false) }
             }
         }
     }
@@ -359,13 +351,6 @@ class CartViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while loading user profile: ${e.message}", e)
             }
-        }
-    }
-
-    private fun getErrorMessage(error: ua.nure.nomnomsave.repository.Error): String {
-        return when (error) {
-            is DataError.ApiError -> error.message
-            else -> "An error occurred"
         }
     }
 }

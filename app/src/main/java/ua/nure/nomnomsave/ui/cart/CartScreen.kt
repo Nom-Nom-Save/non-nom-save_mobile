@@ -341,7 +341,7 @@ private fun MyOrdersTabContent(
                                 )
                             )
                         },
-                        onDelete = { onAction(Cart.Action.OnShowDeleteOrderConfirmation(id = order.orderEntity.id)) }
+                        onDeleteItem = { onAction(Cart.Action.OnShowDeleteOrderConfirmation(id = order.orderEntity.id)) }
                     )
                 }
             }
@@ -522,23 +522,6 @@ private fun CartItemGroupCard(
                 placeholder = painterResource(R.drawable.placeholder_image),
                 error = painterResource(R.drawable.placeholder_image),
             )
-
-            IconButton(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(AppTheme.dimension.small)
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(AppTheme.color.background),
-                onClick = { }
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.favorite_passive),
-                    contentDescription = null,
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
         }
 
         Row(
