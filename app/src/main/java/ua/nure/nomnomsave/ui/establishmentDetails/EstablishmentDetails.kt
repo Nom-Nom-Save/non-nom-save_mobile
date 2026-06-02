@@ -22,6 +22,8 @@ object EstablishmentDetails {
         data class OnSubmitReview(val rating: Int, val comment: String) : Action
         data class OnDeleteReview(val reviewId: String) : Action
         data class OnReserveNow(val menuItem: MenuEntity, val quantity: Int) : Action
+        data class OnFilterChanged(val rating: Int?) : Action
+        object OnSortToggled : Action
         data class OnCreateExternalAction(val text: String, val title: String, val intent: PendingIntent) : Action
     }
 
@@ -31,6 +33,9 @@ object EstablishmentDetails {
         val menu: List<MenuEntity>? = null,
         val reviews: List<ReviewEntity> = emptyList(),
         val showReviewSheet: Boolean = false,
-        val editingReview: ReviewEntity? = null
+        val editingReview: ReviewEntity? = null,
+        val isReviewLimitReached: Boolean = false,
+        val sortDesc: Boolean = true,
+        val selectedRatingFilter: Int? = null
         )
 }

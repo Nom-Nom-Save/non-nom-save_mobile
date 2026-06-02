@@ -64,6 +64,9 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.platform.LocalContext
 import ua.nure.nomnomsave.MainActivity
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 
 enum class DetailsTab {
     DETAILS, REVIEWS
@@ -137,8 +140,8 @@ fun EstablishmentDetailsScreen(
     var selectedTab by remember { mutableStateOf(DetailsTab.DETAILS) }
     var selectedMenuItem by remember { mutableStateOf<MenuEntity?>(null) }
 
-    val myReview = remember(state.reviews) { state.reviews.find { it.isMyReview } }
-    val isLimitReached = myReview != null && myReview.isEditable
+    val editableReview = remember(state.reviews) { state.reviews.find { it.isMyReview && it.isEditable } }
+    val isLimitReached = editableReview != null
 
     val context = LocalContext.current
 
@@ -291,13 +294,39 @@ fun EstablishmentDetailsScreen(
                                 .padding(top = AppTheme.dimension.large),
                             verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.normal)
                         ) {
+                            ReviewFilterRow(
+                                selectedRating = state.selectedRatingFilter,
+                                onRatingSelected = { newRating ->
+                                    onAction(EstablishmentDetails.Action.OnFilterChanged(newRating))
+                                },
+                                sortDesc = state.sortDesc,
+                                onSortToggle = {
+                                    onAction(EstablishmentDetails.Action.OnSortToggled)
+                                }
+                            )
 
                             if (state.reviews.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.noReviews),
-                                    style = AppTheme.typography.regular.copy(color = AppTheme.color.grey),
-                                    modifier = Modifier.padding(vertical = AppTheme.dimension.normal)
-                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = AppTheme.dimension.iconSize),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.review),
+                                        contentDescription = null,
+                                        tint = AppTheme.color.grey.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(AppTheme.dimension.iconSize)
+                                    )
+                                    Spacer(modifier = Modifier.height(AppTheme.dimension.normal))
+                                    Text(
+                                        text = if (state.selectedRatingFilter != null)
+                                            "No reviews with ${state.selectedRatingFilter} stars yet"
+                                        else
+                                            stringResource(R.string.noReviews),
+                                        style = AppTheme.typography.regular.copy(color = AppTheme.color.grey)
+                                    )
+                                }
                             } else {
                                 state.reviews.forEach { review ->
                                     NNSReviewCard(
@@ -426,8 +455,8 @@ fun EstablishmentDetailsScreen(
                             text = stringResource(R.string.oneReview),
                             style = AppTheme.typography.regular.copy(
                                 color = AppTheme.color.error,
-                            ),
-                            fontWeight = FontWeight.Normal
+                                fontWeight = FontWeight.Normal
+                            )
                         )
                     }
                 }
@@ -546,6 +575,80 @@ private fun formatWorkingHours(rawHours: String?): String {
         }.joinToString("\n")
     } catch (e: Exception) {
         rawHours
+    }
+}
+
+@Composable
+fun ReviewFilterRow(
+    modifier: Modifier = Modifier,
+    selectedRating: Int?,
+    onRatingSelected: (Int?) -> Unit,
+    sortDesc: Boolean,
+    onSortToggle: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(AppTheme.dimension.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FilterChip(
+            selected = false,
+            onClick = onSortToggle,
+            label = {
+                Text(
+                    text = if (sortDesc) "Newest" else "Oldest",
+                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.Medium)
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.star_rate),
+                    contentDescription = "Sort",
+                    tint = AppTheme.color.active
+                )
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = AppTheme.color.background,
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = false,
+                borderColor = AppTheme.color.active
+            )
+        )
+
+        FilterChip(
+            selected = selectedRating == null,
+            onClick = { onRatingSelected(null) },
+            label = { Text("All") },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = AppTheme.color.active,
+                selectedLabelColor = AppTheme.color.background
+            )
+        )
+        for (stars in 5 downTo 1) {
+            FilterChip(
+                selected = selectedRating == stars,
+                onClick = { onRatingSelected(stars) },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("$stars")
+                        Icon(
+                            painter = painterResource(R.drawable.star_rate),
+                            contentDescription = null,
+                            tint = if (selectedRating == stars) AppTheme.color.background else AppTheme.color.active,
+                            modifier = Modifier.padding(start = 2.dp)
+                        )
+                    }
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = AppTheme.color.active,
+                    selectedLabelColor = AppTheme.color.background
+                )
+            )
+        }
     }
 }
 
