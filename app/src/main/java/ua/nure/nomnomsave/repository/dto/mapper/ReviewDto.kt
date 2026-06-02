@@ -13,7 +13,7 @@ fun ReviewDto.toEntity(
         establishmentId = this.establishmentId ?: establishmentId,
         userId = this.user?.id ?: this.userId ?: "",
 
-        userName = if (isMyReview) "You" else (this.user?.fullName ?: ""),
+        userName = this.user?.fullName ?: "",
 
         rating = this.rating,
         comment = this.comment,

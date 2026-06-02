@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import ua.nure.nomnomsave.db.dao.MenuDao
+import ua.nure.nomnomsave.db.data.DbConverters
 import ua.nure.nomnomsave.db.data.dao.CartItemDao
 import ua.nure.nomnomsave.db.data.dao.EstablishedDao
 import ua.nure.nomnomsave.db.data.dao.FavoriteDao
@@ -29,9 +30,9 @@ import ua.nure.nomnomsave.db.data.entity.ReviewEntity
         FavoriteEntity::class,
         EstablishmentEntity::class,
         MenuEntity::class,
-        ReviewEntity::class
+        ReviewEntity::class,
     ],
-    version = 10
+    version = 12
 )
 
 @TypeConverters(DbConverters::class)

@@ -11,7 +11,7 @@ import ua.nure.nomnomsave.repository.review.dto.ReviewMutationResponse
 interface ReviewRepository {
     suspend fun getLocalReviews(establishmentId: String): Flow<List<ReviewEntity>>
 
-    suspend fun fetchReviews(establishmentId: String, page: Int = 1, limit: Int = 10): Result<GetReviewsResponse, DataError>
+    suspend fun fetchReviews(establishmentId: String, page: Int = 1, limit: Int = 10, sortDesc: Boolean = true, ratingFilter: Int? = null): Result<GetReviewsResponse, DataError>
 
     suspend fun fetchRatingDistribution(establishmentId: String): Result<RatingDistributionResponse, DataError>
 

@@ -67,7 +67,6 @@ fun NNSReviewCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                // Рядок з іменем ТА датою
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = name,

@@ -45,25 +45,34 @@ class ReviewRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
     override suspend fun fetchReviews(
         establishmentId: String,
         page: Int,
-        limit: Int
+        limit: Int,
+        sortDesc: Boolean,
+        ratingFilter: Int?
     ): Result<GetReviewsResponse, DataError> =
         withContext(Dispatchers.IO) {
             safeCall<GetReviewsResponse> {
                 httpClient.get("reviews/establishment/$establishmentId") {
                     parameter("page", page)
                     parameter("limit", limit)
+                    parameter("sort", if (sortDesc) "desc" else "asc")
+                    if (ratingFilter != null) {
+                        parameter("ratingFilter", ratingFilter)
+                    }
                 }
             }.onSuccess { response ->
-                val entities = response.reviews.map { it.toEntity(establishmentId, isMyReview = false) }.toMutableList()
+                val myReviewId = response.myReview?.id
+                val myUserId = response.reviews.find { it.id == myReviewId }?.user?.id
 
-                response.myReview?.let { myReviewDto ->
-                    entities.removeAll { it.id == myReviewDto.id }
-                    // Ось тут ми прибрали forcedUserName, бо мапер тепер сам знає, що писати "You"
-                    entities.add(myReviewDto.toEntity(
+                val entities = response.reviews.map { dto ->
+                    val isMine = (myUserId != null && dto.user?.id == myUserId) || (dto.id == myReviewId)
+
+                    dto.toEntity(
                         establishmentId = establishmentId,
-                        isMyReview = true
-                    ))
+                        isMyReview = isMine,
+                        forcedIsEditable = if (dto.id == myReviewId) response.myReview?.isEditable else false
+                    )
                 }
+
 
                 if (page == 1) {
                     dbRepository.db.reviewDao.clearReviewsByEstablishment(establishmentId)
@@ -73,7 +82,6 @@ class ReviewRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
                 }
             }
         }
-
     override suspend fun fetchRatingDistribution(
         establishmentId: String
     ): Result<RatingDistributionResponse, DataError> =

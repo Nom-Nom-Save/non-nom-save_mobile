@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import ua.nure.nomnomsave.db.DbRepository
 import ua.nure.nomnomsave.db.data.entity.CartItemEntity
+import ua.nure.nomnomsave.db.data.dao.CartItemDao
 import ua.nure.nomnomsave.di.DbDeliveryDispatcher
 import ua.nure.nomnomsave.repository.DataError
 import ua.nure.nomnomsave.repository.Result

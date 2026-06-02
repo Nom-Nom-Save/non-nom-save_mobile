@@ -52,8 +52,16 @@ class EstablishmentDetailsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            reviewRepository.getLocalReviews(id).collect { reviewList ->
-                _state.update { it.copy(reviews = reviewList) }
+            reviewRepository.getLocalReviews(id).collect { rawReviewList ->
+                _state.update { currentState ->
+                    val sortedList = if (currentState.sortDesc) {
+                        rawReviewList.sortedByDescending { it.createdAt }
+                    } else {
+                        rawReviewList.sortedBy { it.createdAt }
+                    }
+
+                    currentState.copy(reviews = sortedList)
+                }
             }
         }
 
@@ -70,8 +78,13 @@ class EstablishmentDetailsViewModel @Inject constructor(
             menuRepository.fetchMenu(id)
         }
 
+
         viewModelScope.launch {
-            reviewRepository.fetchReviews(id)
+            reviewRepository.fetchReviews(
+                establishmentId = id,
+                sortDesc = state.value.sortDesc,
+                ratingFilter = state.value.selectedRatingFilter
+            )
         }
     }
 
@@ -95,23 +108,36 @@ class EstablishmentDetailsViewModel @Inject constructor(
                 val estId = state.value.establishment?.id ?: return@launch
                 val editingReview = state.value.editingReview
 
-                if (editingReview != null) {
-                    reviewRepository.updateReview(
-                        reviewId = editingReview.id,
-                        rating = action.rating,
-                        comment = action.comment
-                    )
-                } else {
-                    reviewRepository.createReview(
-                        establishmentId = estId,
-                        rating = action.rating,
-                        comment = action.comment
-                    )
+                try {
+                    if (editingReview != null) {
+                        reviewRepository.updateReview(
+                            reviewId = editingReview.id,
+                            rating = action.rating,
+                            comment = action.comment
+                        )
+                    } else {
+                        reviewRepository.createReview(
+                            establishmentId = estId,
+                            rating = action.rating,
+                            comment = action.comment
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    refreshReviews()
+                    _state.update { it.copy(editingReview = null) }
                 }
-                _state.update { it.copy(editingReview = null) }
             }
+
             is EstablishmentDetails.Action.OnDeleteReview -> {
-                reviewRepository.deleteReview(action.reviewId)
+                try {
+                    reviewRepository.deleteReview(action.reviewId)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    refreshReviews()
+                }
             }
             is EstablishmentDetails.Action.OnReserveNow -> {
                 _event.emit(
@@ -128,6 +154,45 @@ class EstablishmentDetailsViewModel @Inject constructor(
                     title = action.title,
                     intent = action.intent
                 )
+            }
+            is EstablishmentDetails.Action.OnFilterChanged -> {
+                _state.update { it.copy(selectedRatingFilter = action.rating) }
+                refreshReviews()
+            }
+
+            EstablishmentDetails.Action.OnSortToggled -> {
+                _state.update { currentState ->
+                    val newSortDesc = !currentState.sortDesc
+                    val sortedList = if (newSortDesc) {
+                        currentState.reviews.sortedByDescending { it.createdAt }
+                    } else {
+                        currentState.reviews.sortedBy { it.createdAt }
+                    }
+
+                    currentState.copy(
+                        sortDesc = newSortDesc,
+                        reviews = sortedList
+                    )
+                }
+                refreshReviews()
+            }
+        }
+    }
+
+    private fun refreshReviews() {
+        val currentState = _state.value
+        val estId = currentState.establishment?.id ?: return
+
+        viewModelScope.launch {
+            reviewRepository.fetchReviews(
+                establishmentId = estId,
+                page = 1,
+                sortDesc = currentState.sortDesc,
+                ratingFilter = currentState.selectedRatingFilter
+            ).onSuccess { response ->
+                _state.update { it.copy(
+                    isReviewLimitReached = response.myReview?.isEditable ?: false
+                )}
             }
         }
     }
