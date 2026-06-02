@@ -1,5 +1,6 @@
 package ua.nure.nomnomsave.repository.order
 
+import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
@@ -34,6 +35,8 @@ class OrderRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
     private val dbRepository: DbRepository,
     @DbDeliveryDispatcher private val dbDeliveryDispatcher: CloseableCoroutineDispatcher,
 ) : OrderRepository {
+    private val TAG by lazy { OrderRepositoryImpl::class.simpleName }
+
     override suspend fun orders(page: Int, limit: Int): Result<OrdersResponseDto, DataError> =
         withContext(Dispatchers.IO) {
             safeCall<OrdersResponseDto> {
@@ -42,6 +45,9 @@ class OrderRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
                     url.parameters.append("limit", limit.toString())
                 }
             }.onSuccess {
+                Log.d(TAG, "orders: loaded: $it")
+                dbRepository.db.orderDao.clearOrders()
+                dbRepository.db.orderDetailsDao.clear()
                 dbRepository.db.orderDao.insert(it.orders.map { it.toEntity() })
                 dbRepository.db.orderDetailsDao.insert(
                     it.orders
@@ -58,13 +64,13 @@ class OrderRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
             }.map { it.order }
         }
 
-    override suspend fun createOrder(request: CreateOrderRequest): Result<OrderDto, DataError> =
+    override suspend fun createOrder(request: CreateOrderRequest): Result<Any, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<OrderResponseWrapper> {
+            safeCall<Any> {
                 httpClient.post("orders") {
                     setBody(request)
                 }
-            }.map { it.order }
+            }
         }
 
     override suspend fun updateOrderStatus(
@@ -79,11 +85,11 @@ class OrderRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
             }.map { it.order }
         }
 
-    override suspend fun cancelOrder(id: String): Result<OrderDto, DataError> =
+    override suspend fun cancelOrder(id: String): Result<Any, DataError> =
         withContext(Dispatchers.IO) {
-            safeCall<OrderResponseWrapper> {
+            safeCall<Any> {
                 httpClient.patch("orders/$id/cancel")
-            }.map { it.order }
+            }
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)

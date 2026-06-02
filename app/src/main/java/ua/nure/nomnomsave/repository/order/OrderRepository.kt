@@ -14,7 +14,7 @@ interface OrderRepository {
     suspend fun orders(page: Int = 1, limit: Int = 10): Result<OrdersResponseDto, DataError>
     suspend fun getOrders(): Flow<List<Order>>
     suspend fun getOrderById(id: String): Result<OrderDto, DataError>
-    suspend fun createOrder(request: CreateOrderRequest): Result<OrderDto, DataError>
+    suspend fun createOrder(request: CreateOrderRequest): Result<Any, DataError>
     suspend fun updateOrderStatus(id: String, request: UpdateOrderStatusRequest): Result<OrderDto, DataError>
-    suspend fun cancelOrder(id: String): Result<OrderDto, DataError>
+    suspend fun cancelOrder(id: String): Result<Any, DataError>
 }

@@ -16,4 +16,7 @@ interface OrderDao {
     @Query("SELECT * FROM OrderEntity")
     fun get(): Flow<List<Order>>
 
+    @Query("DELETE FROM OrderEntity")
+    suspend fun clearOrders()
+
 }

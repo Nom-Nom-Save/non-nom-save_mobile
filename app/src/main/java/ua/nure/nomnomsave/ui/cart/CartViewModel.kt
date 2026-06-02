@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ua.nure.nomnomsave.config.qrCodeBitmapDefaultSize
 import ua.nure.nomnomsave.repository.Result
+import ua.nure.nomnomsave.repository.dto.OrderStatus
+import ua.nure.nomnomsave.repository.onError
+import ua.nure.nomnomsave.repository.onSuccess
 import ua.nure.nomnomsave.repository.order.OrderRepository
 import ua.nure.nomnomsave.repository.resource.ResourceRepository
 import ua.nure.nomnomsave.repository.user.UserRepository
@@ -65,7 +68,10 @@ class CartViewModel @Inject constructor(
                     s.copy(
                         showQRCodeDialog = true,
                         qrCodeDialogTitle = action.title,
-                        qrBitmap = resourceRepository.generateQR(action.data, qrCodeBitmapDefaultSize),
+                        qrBitmap = resourceRepository.generateQR(
+                            action.data,
+                            qrCodeBitmapDefaultSize
+                        ),
                     )
                 }
             }
@@ -81,34 +87,73 @@ class CartViewModel @Inject constructor(
             }
 
             is Cart.Action.OnShowDeleteOrderConfirmation -> {
-                _state.update { s -> s.copy(showDeleteOrderConfirmation = true, pendingDeleteOrderId = action.id) }
+                _state.update { s ->
+                    s.copy(
+                        showDeleteOrderConfirmation = true,
+                        pendingDeleteOrderId = action.id
+                    )
+                }
             }
 
             is Cart.Action.OnDismissDeleteConfirmation -> {
-                _state.update { s -> s.copy(showDeleteOrderConfirmation = false, pendingDeleteOrderId = null) }
+                _state.update { s ->
+                    s.copy(
+                        showDeleteOrderConfirmation = false,
+                        pendingDeleteOrderId = null
+                    )
+                }
             }
 
             is Cart.Action.OnConfirmDeleteOrder -> cancelOrder(action.id)
 
             is Cart.Action.OnShowRemoveFromCartConfirmation -> {
-                _state.update { s -> s.copy(showRemoveFromCartConfirmation = true, pendingRemoveMenuPriceId = action.menuPriceId) }
+                _state.update { s ->
+                    s.copy(
+                        showRemoveFromCartConfirmation = true,
+                        pendingRemoveMenuPriceId = action.menuPriceId
+                    )
+                }
             }
 
             is Cart.Action.OnDismissRemoveConfirmation -> {
-                _state.update { s -> s.copy(showRemoveFromCartConfirmation = false, pendingRemoveMenuPriceId = null) }
+                _state.update { s ->
+                    s.copy(
+                        showRemoveFromCartConfirmation = false,
+                        pendingRemoveMenuPriceId = null
+                    )
+                }
             }
 
             is Cart.Action.OnRemoveFromLocalCartConfirmed -> {
                 removeFromLocalCart(action.menuPriceId)
-                _state.update { s -> s.copy(showRemoveFromCartConfirmation = false, pendingRemoveMenuPriceId = null) }
+                _state.update { s ->
+                    s.copy(
+                        showRemoveFromCartConfirmation = false,
+                        pendingRemoveMenuPriceId = null
+                    )
+                }
             }
 
-            is Cart.Action.OnCreateOrder -> createOrderFromMenuItem(action.menuPriceId, action.quantity)
+            is Cart.Action.OnCreateOrder -> createOrderFromMenuItem(
+                action.menuPriceId,
+                action.quantity
+            )
+
             is Cart.Action.OnAddToLocalCart -> addToLocalCart(action.item)
             is Cart.Action.OnRemoveFromLocalCart -> {
-                _state.update { s -> s.copy(showRemoveFromCartConfirmation = true, pendingRemoveMenuPriceId = action.menuPriceId) }
+                _state.update { s ->
+                    s.copy(
+                        showRemoveFromCartConfirmation = true,
+                        pendingRemoveMenuPriceId = action.menuPriceId
+                    )
+                }
             }
-            is Cart.Action.OnOrderSingleItem -> submitSingleItem(action.menuPriceId, action.quantity)
+
+            is Cart.Action.OnOrderSingleItem -> submitSingleItem(
+                action.menuPriceId,
+                action.quantity
+            )
+
             Cart.Action.OnSubmitLocalOrder -> submitLocalOrder()
             is Cart.Action.OnOrderAllFromEstablishment -> orderAllFromEstablishment(action.establishmentName)
             is Cart.Action.OnDismissErrorDialog -> {
@@ -119,9 +164,10 @@ class CartViewModel @Inject constructor(
 
     private fun addToLocalCart(item: LocalCartItem) {
         _state.update { s ->
-            val existing = s.localCartItems.find { it.detail.menuPriceId == item.detail.menuPriceId }
+            val existing =
+                s.localCartItems.find { it.detail.menuPriceId == item.detail.menuPriceId }
             val updated = if (existing != null) {
-                s.localCartItems.map { 
+                s.localCartItems.map {
                     if (it.detail.menuPriceId == item.detail.menuPriceId) {
                         it.copy(detail = it.detail.copy(quantity = it.detail.quantity + item.detail.quantity))
                     } else it
@@ -143,7 +189,7 @@ class CartViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _state.update { it.copy(inProgress = true) }
-                
+
                 val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
                     items = listOf(
                         ua.nure.nomnomsave.repository.dto.OrderItemRequest(
@@ -152,27 +198,21 @@ class CartViewModel @Inject constructor(
                         )
                     )
                 )
-                
-                orderRepository.createOrder(createOrderRequest).let { result ->
-                    when (result) {
-                        is Result.Success -> {
-                            Log.d(TAG, "Order submitted successfully: ${result.data.id}")
-                            _state.update { s ->
-                                s.copy(
-                                    inProgress = false,
-                                    localCartItems = s.localCartItems.filter { it.detail.menuPriceId != menuPriceId }
-                                )
-                            }
-                            loadOrders()
-                        }
-                        is Result.Error -> {
-                            Log.e(TAG, "Failed to submit order: ${result.error}")
-                            _state.update { it.copy(inProgress = false) }
-                        }
+
+                orderRepository.createOrder(
+                    createOrderRequest
+                ).onSuccess {
+                    _state.update { s ->
+                        s.copy(
+                            inProgress = false,
+                            localCartItems = s.localCartItems.filter { it.detail.menuPriceId != menuPriceId }
+                        )
                     }
+                    loadOrders()
+                }.onError {
+                    _state.update { it.copy(inProgress = false) }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception: ${e.message}", e)
                 _state.update { it.copy(inProgress = false) }
             }
         }
@@ -187,7 +227,7 @@ class CartViewModel @Inject constructor(
                 }
 
                 _state.update { it.copy(inProgress = true) }
-                
+
                 val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
                     items = items.map { item ->
                         ua.nure.nomnomsave.repository.dto.OrderItemRequest(
@@ -200,9 +240,15 @@ class CartViewModel @Inject constructor(
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
                         is Result.Success -> {
-                            _state.update { it.copy(inProgress = false, localCartItems = emptyList()) }
+                            _state.update {
+                                it.copy(
+                                    inProgress = false,
+                                    localCartItems = emptyList()
+                                )
+                            }
                             loadOrders()
                         }
+
                         is Result.Error -> {
                             _state.update { it.copy(inProgress = false) }
                         }
@@ -216,42 +262,33 @@ class CartViewModel @Inject constructor(
 
     private fun orderAllFromEstablishment(establishmentName: String) {
         viewModelScope.launch {
-            try {
-                val items = _state.value.localCartItems.filter { it.establishmentName == establishmentName }
-                if (items.isEmpty()) {
-                    return@launch
+            val items =
+                _state.value.localCartItems.filter { it.establishmentName == establishmentName }
+            if (items.isEmpty()) {
+                return@launch
+            }
+
+            _state.update { it.copy(inProgress = true) }
+
+            val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
+                items = items.map { item ->
+                    ua.nure.nomnomsave.repository.dto.OrderItemRequest(
+                        menuPriceId = item.detail.menuPriceId,
+                        quantity = item.detail.quantity
+                    )
                 }
-
-                _state.update { it.copy(inProgress = true) }
-
-                val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
-                    items = items.map { item ->
-                        ua.nure.nomnomsave.repository.dto.OrderItemRequest(
-                            menuPriceId = item.detail.menuPriceId,
-                            quantity = item.detail.quantity
-                        )
-                    }
-                )
-
-                orderRepository.createOrder(createOrderRequest).let { result ->
-                    when (result) {
-                        is Result.Success -> {
-                            Log.d(TAG, "Order from establishment created successfully: ${result.data.id}")
-                            _state.update { s ->
-                                s.copy(
-                                    inProgress = false,
-                                    localCartItems = s.localCartItems.filter { it.establishmentName != establishmentName }
-                                )
-                            }
-                            loadOrders()
-                        }
-                        is Result.Error -> {
-                            _state.update { it.copy(inProgress = false) }
-                        }
-                    }
+            )
+            orderRepository.createOrder(
+                createOrderRequest
+            ).onSuccess { order ->
+                _state.update { s ->
+                    s.copy(
+                        inProgress = false,
+                        localCartItems = s.localCartItems.filter { it.establishmentName != establishmentName }
+                    )
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception while creating order from establishment: ${e.message}", e)
+                loadOrders()
+            }.onError {
                 _state.update { it.copy(inProgress = false) }
             }
         }
@@ -259,24 +296,20 @@ class CartViewModel @Inject constructor(
 
     private fun cancelOrder(orderId: String) {
         viewModelScope.launch {
-            try {
-                _state.update { it.copy(inProgress = true, showDeleteOrderConfirmation = false, pendingDeleteOrderId = null) }
-                orderRepository.cancelOrder(orderId).let { result ->
-                    when (result) {
-                        is Result.Success -> {
-                            Log.d(TAG, "Order cancelled successfully: $orderId")
-                            _state.update { it.copy(inProgress = false) }
-                            loadOrders()
-                        }
-                        is Result.Error -> {
-                            _state.update { it.copy(inProgress = false) }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception while cancelling order: ${e.message}", e)
-                _state.update { it.copy(inProgress = false) }
+            _state.update {
+                it.copy(
+                    inProgress = true,
+                    showDeleteOrderConfirmation = false,
+                    pendingDeleteOrderId = null
+                )
             }
+            orderRepository.cancelOrder(orderId)
+                .onSuccess {
+                    _state.update { it.copy(inProgress = false) }
+                    loadOrders()
+                }.onError {
+                    _state.update { it.copy(inProgress = false) }
+                }
         }
     }
 
@@ -284,7 +317,7 @@ class CartViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _state.update { it.copy(inProgress = true) }
-                
+
                 val createOrderRequest = ua.nure.nomnomsave.repository.dto.CreateOrderRequest(
                     items = listOf(
                         ua.nure.nomnomsave.repository.dto.OrderItemRequest(
@@ -296,18 +329,16 @@ class CartViewModel @Inject constructor(
                 orderRepository.createOrder(createOrderRequest).let { result ->
                     when (result) {
                         is Result.Success -> {
-                            Log.d(TAG, "Order created successfully: ${result.data.id}")
                             _state.update { it.copy(inProgress = false) }
                             loadOrders()
                         }
+
                         is Result.Error -> {
-                            Log.e(TAG, "Failed to create order: ${result.error}")
                             _state.update { it.copy(inProgress = false) }
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception while creating order: ${e.message}", e)
                 _state.update { it.copy(inProgress = false) }
             }
         }
@@ -324,7 +355,10 @@ class CartViewModel @Inject constructor(
         observeOrdersJob?.cancel()
         observeOrdersJob = viewModelScope.launch {
             orderRepository.getOrders().collect { list ->
-                Log.d(TAG, "observeOrders: ${list.firstOrNull()?.orderEntity?.id}")
+                Log.d(
+                    TAG,
+                    "observeOrders: ${list.size},Reserved: ${list.count { it.orderEntity.orderStatus == OrderStatus.Reserved }}, Canceled: ${list.count { it.orderEntity.orderStatus == OrderStatus.Cancelled }}, Completed: ${list.count { it.orderEntity.orderStatus == OrderStatus.Completed }} "
+                )
                 _state.update { s -> s.copy(orders = list) }
             }
         }
@@ -342,14 +376,12 @@ class CartViewModel @Inject constructor(
                             totalOrderedItems = user.totalOrderedItems
                         )
                         _state.update { s -> s.copy(userStats = stats) }
-                        Log.d(TAG, "User stats loaded: $stats")
                     }
+
                     is Result.Error -> {
-                        Log.e(TAG, "Failed to load user profile: ${result.error}")
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception while loading user profile: ${e.message}", e)
             }
         }
     }

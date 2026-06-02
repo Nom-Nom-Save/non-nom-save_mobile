@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +43,7 @@ import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.distinctUntilChanged
 import ua.nure.nomnomsave.R
 import ua.nure.nomnomsave.db.data.entity.Order
 import ua.nure.nomnomsave.repository.dto.OrderStatus
@@ -209,82 +211,95 @@ private fun OrderTabContent(
             onAction(Cart.Action.OnQueryChanged(query = it))
         }
 
-        if (state.localCartItems.isNotEmpty()) {
-            Text(
-                modifier = Modifier
-                    .padding(horizontal = AppTheme.dimension.normal)
-                    .padding(top = AppTheme.dimension.normal),
-                text = "Your Order (${state.localCartItems.size} items)",
-                style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
-            )
+        when {
+            state.localCartItems.isNotEmpty() -> {
+                Text(
+                    modifier = Modifier
+                        .padding(horizontal = AppTheme.dimension.normal)
+                        .padding(top = AppTheme.dimension.normal),
+                    text = "Your Order (${state.localCartItems.size} items)",
+                    style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
+                )
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = AppTheme.dimension.normal)
-                    .padding(top = AppTheme.dimension.small),
-                verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
-            ) {
-                val groupedByEstablishment = state.localCartItems.groupBy { it.establishmentName }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = AppTheme.dimension.normal)
+                        .padding(top = AppTheme.dimension.small),
+                    verticalArrangement = Arrangement.spacedBy(AppTheme.dimension.small)
+                ) {
+                    val groupedByEstablishment = state.localCartItems.groupBy { it.establishmentName }
 
-                groupedByEstablishment.forEach { (establishmentName, items) ->
-                    item(key = establishmentName) {
-                        items.first().establishmentAddress?.let {
-                            CartItemGroupCard(
-                                establishmentName = establishmentName,
-                                establishmentAddress = it,
-                                establishmentLogo = items.first().establishmentLogo,
-                                establishmentBanner = items.first().establishmentBanner,
-                                items = items,
-                                errorMessage = if (state.showErrorDialog) state.errorMessage else null,
-                                onRemoveItem = { menuPriceId ->
-                                    onAction(Cart.Action.OnShowRemoveFromCartConfirmation(menuPriceId))
-                                },
-                                onOrderItem = { menuPriceId, quantity ->
-                                    onAction(Cart.Action.OnOrderSingleItem(menuPriceId, quantity))
-                                },
-                                onOrderAll = { establishment ->
-                                    onAction(Cart.Action.OnOrderAllFromEstablishment(establishment))
-                                }
-                            )
+                    groupedByEstablishment.forEach { (establishmentName, items) ->
+                        item(key = establishmentName) {
+                            items.first().establishmentAddress?.let {
+                                CartItemGroupCard(
+                                    establishmentName = establishmentName,
+                                    establishmentAddress = it,
+                                    establishmentLogo = items.first().establishmentLogo,
+                                    establishmentBanner = items.first().establishmentBanner,
+                                    items = items,
+                                    errorMessage = if (state.showErrorDialog) state.errorMessage else null,
+                                    onRemoveItem = { menuPriceId ->
+                                        onAction(
+                                            Cart.Action.OnShowRemoveFromCartConfirmation(
+                                                menuPriceId
+                                            )
+                                        )
+                                    },
+                                    onOrderItem = { menuPriceId, quantity ->
+                                        onAction(Cart.Action.OnOrderSingleItem(menuPriceId, quantity))
+                                    },
+                                    onOrderAll = { establishment ->
+                                        onAction(Cart.Action.OnOrderAllFromEstablishment(establishment))
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppTheme.dimension.normal)
-                    .padding(top = AppTheme.dimension.normal),
-            ) {
-                val filtered = (state.orders ?: emptyList()).filter { order ->
-                    order.orderStatus == OrderStatus.Reserved
-                }.let { list ->
-                    if (state.query.isNullOrBlank()) list
-                    else list.filter {
-                        it.orderEntity.establishmentName.contains(state.query, ignoreCase = true) ||
-                                it.details.any { d -> d.itemName.contains(state.query, ignoreCase = true) }
+            search?.isNotEmpty() == true -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppTheme.dimension.normal)
+                        .padding(top = AppTheme.dimension.normal),
+                ) {
+                    val filtered = (state.orders ?: emptyList()).filter { order ->
+                        order.orderStatus == OrderStatus.Reserved
+                    }.let { list ->
+                        if (state.query.isNullOrBlank()) list
+                        else list.filter {
+                            it.orderEntity.establishmentName.contains(state.query, ignoreCase = true) ||
+                                    it.details.any { d ->
+                                        d.itemName.contains(
+                                            state.query,
+                                            ignoreCase = true
+                                        )
+                                    }
+                        }
+                    }
+
+                    items(items = filtered, key = { it.orderEntity.id }) { order ->
+                        OrderCard(
+                            order = order,
+                            errorMessage = if (state.showErrorDialog) state.errorMessage else null,
+                            onOrder = {
+                                onAction(
+                                    Cart.Action.OnQR(
+                                        data = order.orderEntity.qrCodeData,
+                                        title = order.details.firstOrNull()?.itemName ?: ""
+                                    )
+                                )
+                            },
+                            onDelete = { onAction(Cart.Action.OnShowDeleteOrderConfirmation(id = order.orderEntity.id)) }
+                        )
                     }
                 }
-
-                items(items = filtered, key = { it.orderEntity.id }) { order ->
-                    OrderCard(
-                        order = order,
-                        errorMessage = if (state.showErrorDialog) state.errorMessage else null,
-                        onOrder = {
-                            onAction(
-                                Cart.Action.OnQR(
-                                    data = order.orderEntity.qrCodeData,
-                                    title = order.details.firstOrNull()?.itemName ?: ""
-                                )
-                            )
-                        },
-                        onDelete = { onAction(Cart.Action.OnShowDeleteOrderConfirmation(id = order.orderEntity.id)) }
-                    )
-                }
             }
+            else -> Unit
         }
     }
 }
@@ -294,12 +309,28 @@ private fun MyOrdersTabContent(
     state: Cart.State,
     onAction: (Cart.Action) -> Unit,
 ) {
-    val allOrders = state.orders ?: emptyList()
+    var allOrders by remember { mutableStateOf(state.orders ?: emptyList()) }
 
-    val upcoming = allOrders.filter { it.orderStatus == OrderStatus.Reserved }
-    val completed = allOrders.filter { it.orderStatus == OrderStatus.Completed }
-    val cancelledOrExpired = allOrders.filter {
-        it.orderStatus == OrderStatus.Cancelled || it.orderStatus == OrderStatus.Expired
+    var upcoming by remember { mutableStateOf(allOrders.filter { it.orderStatus == OrderStatus.Reserved }) }
+    var completed by remember { mutableStateOf(allOrders.filter { it.orderStatus == OrderStatus.Completed }) }
+    var cancelledOrExpired by remember {
+        mutableStateOf(allOrders.filter {
+            it.orderStatus == OrderStatus.Cancelled || it.orderStatus == OrderStatus.Expired
+        })
+    }
+
+    LaunchedEffect(key1 = state.orders) {
+        snapshotFlow {
+            allOrders != state.orders
+        }.distinctUntilChanged()
+            .collect {
+                allOrders = state.orders ?: emptyList()
+                upcoming = allOrders.filter { it.orderStatus == OrderStatus.Reserved }
+                completed = allOrders.filter { it.orderStatus == OrderStatus.Completed }
+                cancelledOrExpired = allOrders.filter {
+                    it.orderStatus == OrderStatus.Cancelled || it.orderStatus == OrderStatus.Expired
+                }
+            }
     }
 
     Column(
@@ -372,7 +403,9 @@ private fun MyOrdersTabContent(
             if (cancelledOrExpired.isEmpty()) {
                 item { EmptyOrdersText(text = stringResource(R.string.noCancelledOrders)) }
             } else {
-                items(items = cancelledOrExpired, key = { "cancelled_${it.orderEntity.id}" }) { order ->
+                items(
+                    items = cancelledOrExpired,
+                    key = { "cancelled_${it.orderEntity.id}" }) { order ->
                     MyOrderCard(order = order)
                 }
             }
@@ -639,7 +672,10 @@ private fun CartItemGroupCard(
                                     style = AppTheme.typography.small.copy(color = AppTheme.color.grey),
                                 )
                                 Text(
-                                    text = String.format("$%.0f", item.detail.price * item.detail.quantity),
+                                    text = String.format(
+                                        "$%.0f",
+                                        item.detail.price * item.detail.quantity
+                                    ),
                                     style = AppTheme.typography.regular.copy(fontWeight = FontWeight.SemiBold),
                                 )
                             }

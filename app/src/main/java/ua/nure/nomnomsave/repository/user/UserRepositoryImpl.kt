@@ -42,6 +42,8 @@ class UserRepositoryImpl @OptIn(ExperimentalCoroutinesApi::class) constructor(
 
                 }
             }.onSuccess { dto ->
+                dbRepository.db.favoriteDao.clearFavorites()
+
                 val est = dto.favorites.map {
                     it.establishmentId to it.establishment
                 }.map { (establishmentId, item) ->

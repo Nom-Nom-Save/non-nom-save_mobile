@@ -195,5 +195,14 @@ class EstablishmentDetailsViewModel @Inject constructor(
                 )}
             }
         }
+
+        viewModelScope.launch {
+            repository.getEstablishmentById(estId).onSuccess { dto ->
+                _state.update { it.copy(
+                    establishment = dto.toEntity(),
+                    inProgress = false
+                )}
+            }
+        }
     }
 }

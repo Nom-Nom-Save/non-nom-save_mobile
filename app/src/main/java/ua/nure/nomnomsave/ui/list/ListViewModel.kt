@@ -307,7 +307,9 @@ class ListViewModel @Inject constructor(
     private fun addToFavorite(establishmentId: String) = viewModelScope.launch {
         userRepository.addToFavorites(
             establishmentId = establishmentId
-        )
+        ).onSuccess {
+            userRepository.favorites()
+        }
     }
 
     private fun deleteFromFavorites(favoriteId: String, establishmentId: String) =
